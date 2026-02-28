@@ -4,7 +4,7 @@ A Spotify-inspired music streaming web app built with pure HTML, CSS, and JavaSc
 
 ![TuneFlow Preview](https://img.shields.io/badge/Status-Live-brightgreen) ![HTML](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white) ![CSS](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white) ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)
 
-🎵 **[Live Demo →](https://YOUR-USERNAME.github.io/tuneflow)**
+🎵 **[Live Demo →](https://atharva-923.github.io/TuneFlow)**
 
 ---
 
@@ -27,7 +27,7 @@ A Spotify-inspired music streaming web app built with pure HTML, CSS, and JavaSc
 ### Run Locally
 1. Clone this repository:
    ```bash
-   git clone https://github.com/YOUR-USERNAME/tuneflow.git
+   git clone https://atharva-923.github.io/TuneFlow
    cd tuneflow
    ```
 2. Open `index.html` in your browser — that's it!
@@ -91,8 +91,8 @@ tuneflow/
 
 ## 👤 Author
 
-**Your Name**  
-[GitHub](https://github.com/YOUR-USERNAME) · [LinkedIn](https://linkedin.com/in/YOUR-PROFILE)
+**Atharva Patil**  
+[GitHub](https://github.com/atharva-923) · [LinkedIn](https://www.linkedin.com/in/atharva-patil-345546371/)
 
 ---
 

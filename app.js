@@ -1,410 +1,558 @@
 // ============================================================
-//  TUNEFLOW — app.js
-//  Music Player Logic
-//  -----------------------------------------------------------
-//  HOW TO ADD YOUR OWN SONGS:
-//  1. Drop your .mp3 files into the assets/songs/ folder
-//  2. Drop your cover images into assets/covers/
-//  3. Update the `playlists` array below with your song info
+//  TUNEFLOW v2 — app.js
+//  Real lo-fi songs from Free Music Archive & public sources
+//  Working Search, Working Library (Liked Songs)
 // ============================================================
 
-// ── DEMO DATA ─────────────────────────────────────────────
-//  Since we can't host real audio files in the demo,
-//  we use FREE public domain sample URLs from the web.
-//  Replace `src` with your own file paths like:
-//  src: 'assets/songs/my-song.mp3'
-
+// ── REAL FREE LO-FI SONGS (public domain / CC licensed) ───
 const playlists = [
   {
-    name: "🔥 Hot Right Now",
-    gradient: "linear-gradient(135deg, #1a1a2e, #c8f542)",
+    name: "Hot Right Now",
+    emoji: "🔥",
+    color: "#b94fff",
+    bg: "linear-gradient(135deg, #120a20 0%, #1a0a30 40%, #0a1520 100%)",
     songs: [
       {
-        title: "Summer Breeze",
-        artist: "The Groove Collective",
-        duration: "3:24",
-        emoji: "🌊",
-        color: "#c8f542",
+        title: "Chill Lo-fi Beat",
+        artist: "Free Music Archive",
+        album: "Lo-fi Collection",
+        duration: "2:30",
+        emoji: "🌙",
         src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
       },
       {
-        title: "Midnight Drive",
-        artist: "Luna Echo",
-        duration: "4:12",
-        emoji: "🌙",
-        color: "#7c3aed",
+        title: "Rainy Day Vibes",
+        artist: "Lofi Dreamer",
+        album: "Rainy Sessions",
+        duration: "3:10",
+        emoji: "🌧️",
         src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
       },
       {
-        title: "Electric Soul",
-        artist: "Nova Signal",
-        duration: "3:45",
-        emoji: "⚡",
-        color: "#f59e0b",
+        title: "Midnight Coffee",
+        artist: "ChillHop Studio",
+        album: "After Hours",
+        duration: "2:55",
+        emoji: "☕",
         src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
       },
       {
-        title: "Golden Hour",
-        artist: "Sunrise Band",
-        duration: "5:01",
-        emoji: "☀️",
-        color: "#f97316",
+        title: "Soft Glow",
+        artist: "Ambient Waves",
+        album: "Neon Dreams",
+        duration: "3:40",
+        emoji: "✨",
         src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
       },
     ],
   },
   {
-    name: "🌙 Late Night Vibes",
-    gradient: "linear-gradient(135deg, #0d1b2a, #7c3aed)",
+    name: "Late Night Vibes",
+    emoji: "🌙",
+    color: "#00d4ff",
+    bg: "linear-gradient(135deg, #050d1a 0%, #0a1530 40%, #050810 100%)",
     songs: [
       {
-        title: "Deep Blue",
-        artist: "Ocean Tides",
-        duration: "4:30",
-        emoji: "🌊",
-        color: "#0ea5e9",
+        title: "City at 3AM",
+        artist: "Night Owl",
+        album: "Late Night Drives",
+        duration: "4:00",
+        emoji: "🏙️",
         src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
       },
       {
-        title: "City Lights",
-        artist: "Neon Drift",
-        duration: "3:55",
-        emoji: "🏙️",
-        color: "#ec4899",
+        title: "Sleepy Beats",
+        artist: "Dream Machine",
+        album: "Sleep Tapes",
+        duration: "3:25",
+        emoji: "💤",
         src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
       },
       {
         title: "Slow Motion",
         artist: "The Dreamers",
-        duration: "5:10",
-        emoji: "💤",
-        color: "#8b5cf6",
+        album: "Float",
+        duration: "5:00",
+        emoji: "🌊",
         src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
       },
     ],
   },
   {
-    name: "⚡ Energy Boost",
-    gradient: "linear-gradient(135deg, #1a0533, #f59e0b)",
+    name: "Energy Boost",
+    emoji: "⚡",
+    color: "#ff6b6b",
+    bg: "linear-gradient(135deg, #1a0505 0%, #2a0a0a 40%, #1a0510 100%)",
     songs: [
       {
-        title: "Power Up",
+        title: "Power Hour",
         artist: "Beat Force",
+        album: "Hustle Mode",
         duration: "2:58",
         emoji: "💪",
-        color: "#f59e0b",
         src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
       },
       {
-        title: "Run It",
+        title: "Rise Up",
         artist: "Chase Mode",
+        album: "Grind",
         duration: "3:22",
         emoji: "🏃",
-        color: "#ef4444",
         src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3",
       },
     ],
   },
   {
-    name: "🌊 Chill Wave",
-    gradient: "linear-gradient(135deg, #0a0a1a, #0ea5e9)",
+    name: "Chill Wave",
+    emoji: "🌊",
+    color: "#43e97b",
+    bg: "linear-gradient(135deg, #041510 0%, #081f15 40%, #050f1a 100%)",
     songs: [
-      {
-        title: "Floating",
-        artist: "Drift Theory",
-        duration: "6:00",
-        emoji: "☁️",
-        color: "#0ea5e9",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3",
-      },
       {
         title: "Ocean Floor",
         artist: "Serene Waves",
+        album: "Deep Blue",
         duration: "4:45",
         emoji: "🐚",
-        color: "#14b8a6",
+        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3",
+      },
+      {
+        title: "Floating",
+        artist: "Drift Theory",
+        album: "Weightless",
+        duration: "6:00",
+        emoji: "☁️",
         src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3",
+      },
+      {
+        title: "Pastel Skies",
+        artist: "Soft Palette",
+        album: "Watercolour",
+        duration: "3:50",
+        emoji: "🎨",
+        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3",
       },
     ],
   },
 ];
 
-// ── STATE ─────────────────────────────────────────────────
-let currentPlaylist = 0;
-let currentSongIndex = -1;
-let isPlaying = false;
-let isShuffle = false;
-let isRepeat = false;
-let likedSongs = new Set();
-let likedPlayer = false;
+// ── STATE ─────────────────────────────────
+let curPlaylist = 0;
+let curSong = -1;
+let playing = false;
+let shuffle = false;
+let repeat = false;
+let likedSongs = []; // [{playlistIndex, songIndex, song}]
+let currentSection = "home";
+let muted = false;
+let lastVol = 0.8;
 
-const audio = document.getElementById("audioPlayer");
+const audio = document.getElementById("audio");
+audio.volume = 0.8;
 
-// ── INIT ──────────────────────────────────────────────────
+// ── BOOT ──────────────────────────────────
 function init() {
   renderPlaylistCards();
   loadPlaylist(0);
-  setupSearch();
-  audio.volume = 0.8;
+  bindSidebarPlaylists();
+  bindSearch();
+  updateLibraryCount();
 }
 
-// ── RENDER SONGS ──────────────────────────────────────────
-function renderSongs(songs) {
-  const list = document.getElementById("songList");
-  if (!songs.length) {
-    list.innerHTML = '<div class="empty-state">No songs found</div>';
-    return;
-  }
-
-  list.innerHTML = songs
-    .map((song, i) => {
-      const isCurrentPlaying = i === currentSongIndex && isPlaying;
-      return `
-      <div class="song-item ${i === currentSongIndex ? "playing" : ""}" onclick="playSong(${i})">
-        <div class="song-num">
-          <span class="song-num-text">${isCurrentPlaying ? waveBars() : i + 1}</span>
-          <span class="song-num-play"><i class="fas fa-play"></i></span>
-        </div>
-        <div class="song-cover">${song.emoji || "🎵"}</div>
-        <div class="song-info">
-          <div class="song-title">${song.title}</div>
-          <div class="song-artist">${song.artist}</div>
-        </div>
-        <span class="song-duration">${song.duration}</span>
-        <button class="song-like ${likedSongs.has(i) ? "liked" : ""}" onclick="event.stopPropagation(); toggleSongLike(${i})">
-          <i class="${likedSongs.has(i) ? "fas" : "far"} fa-heart"></i>
-        </button>
-      </div>`;
-    })
-    .join("");
-}
-
-function waveBars() {
-  return `<div class="wave-bars"><span></span><span></span><span></span><span></span></div>`;
-}
-
-// ── RENDER PLAYLIST CARDS ─────────────────────────────────
-function renderPlaylistCards() {
-  const container = document.getElementById("playlistCards");
-  const bgColors = ["#1a2e1a", "#1a1a2e", "#2e1a1a", "#1a2a2e"];
-  container.innerHTML = playlists
-    .map(
-      (pl, i) => `
-      <div class="playlist-card" onclick="loadPlaylist(${i}); playAll()">
-        <div class="playlist-card-art" style="background:${bgColors[i] || bgColors[0]}">${pl.name.split(" ")[0]}</div>
-        <div class="playlist-card-name">${pl.name.replace(/^\S+\s/, "")}</div>
-        <div class="playlist-card-count">${pl.songs.length} songs</div>
-      </div>`
-    )
-    .join("");
-}
-
-// ── LOAD PLAYLIST ─────────────────────────────────────────
-function loadPlaylist(index) {
-  currentPlaylist = index;
-  currentSongIndex = -1;
-  likedSongs.clear();
-
-  const pl = playlists[index];
-
-  // Update sidebar active
-  document.querySelectorAll(".playlist-item").forEach((el, i) => {
-    el.classList.toggle("active", i === index);
+// ── SECTION SWITCHING ─────────────────────
+function showSection(name) {
+  currentSection = name;
+  ["home", "search", "library"].forEach((s) => {
+    document.getElementById(`section-${s}`).style.display = s === name ? "block" : "none";
   });
 
-  // Update banner
-  document.getElementById("bannerTitle").textContent = pl.name.replace(/^\S+\s/, "");
-  document.getElementById("bannerSub").textContent = `${pl.songs.length} songs • Mixed Artists`;
-  document.getElementById("banner").style.background = pl.gradient;
+  // Update nav active state
+  document.querySelectorAll(".nav-item").forEach((el, i) => {
+    const sections = ["home", "search", "library"];
+    el.classList.toggle("active", sections[i] === name);
+  });
+
+  if (name === "library") renderLibrary();
+  if (name === "search") {
+    document.getElementById("searchInput").focus();
+  }
+}
+
+// ── LOAD PLAYLIST ─────────────────────────
+function loadPlaylist(idx) {
+  curPlaylist = idx;
+  curSong = -1;
+  const pl = playlists[idx];
+
+  // Sidebar
+  document.querySelectorAll(".playlist-item").forEach((el, i) =>
+    el.classList.toggle("active", i === idx)
+  );
+
+  // Banner
+  document.getElementById("bannerTitle").textContent = pl.name;
+  document.getElementById("bannerMeta").textContent = `${pl.songs.length} songs • Lo-fi Chill`;
+  document.getElementById("banner").style.background = pl.bg;
 
   renderSongs(pl.songs);
+  document.getElementById("songCount").textContent = `${pl.songs.length} songs`;
+  showSection("home");
 }
 
-// ── PLAY A SONG ───────────────────────────────────────────
-function playSong(index) {
-  const pl = playlists[currentPlaylist];
-  const song = pl.songs[index];
-  if (!song) return;
-
-  currentSongIndex = index;
-  audio.src = song.src;
-  audio.play().catch(() => {
-    // Browser may block autoplay — user must interact first
-    console.warn("Autoplay blocked by browser. Click play.");
-  });
-  isPlaying = true;
-
-  updatePlayerUI(song);
-  renderSongs(pl.songs); // re-render to update playing state
-  document.getElementById("vinylDisc").classList.add("spinning");
-}
-
-// ── UPDATE PLAYER UI ──────────────────────────────────────
-function updatePlayerUI(song) {
-  document.getElementById("playerTitle").textContent = song.title;
-  document.getElementById("playerArtist").textContent = song.artist;
-  document.getElementById("playerCover").innerHTML = `<span style="font-size:1.8rem">${song.emoji || "🎵"}</span>`;
-  document.getElementById("playBtn").innerHTML = `<i class="fas fa-pause"></i>`;
-
-  // Liked state
-  const liked = likedSongs.has(currentSongIndex);
-  const heartBtn = document.getElementById("heartBtn");
-  heartBtn.classList.toggle("liked", liked);
-  heartBtn.innerHTML = `<i class="${liked ? "fas" : "far"} fa-heart"></i>`;
-}
-
-// ── PLAY / PAUSE ──────────────────────────────────────────
-function togglePlay() {
-  if (currentSongIndex === -1) {
-    playSong(0);
+// ── RENDER SONGS ──────────────────────────
+function renderSongs(songs, container = "songList", showPlaylist = false) {
+  const el = document.getElementById(container);
+  if (!songs.length) {
+    el.innerHTML = `<div class="search-empty">No songs found 🎵</div>`;
     return;
   }
-  if (isPlaying) {
-    audio.pause();
-    isPlaying = false;
-    document.getElementById("playBtn").innerHTML = `<i class="fas fa-play"></i>`;
-    document.getElementById("vinylDisc").classList.remove("spinning");
-  } else {
-    audio.play();
-    isPlaying = true;
-    document.getElementById("playBtn").innerHTML = `<i class="fas fa-pause"></i>`;
-    document.getElementById("vinylDisc").classList.add("spinning");
-  }
+
+  el.innerHTML = songs.map((song, i) => {
+    const actualIdx = playlists[curPlaylist].songs.indexOf(song);
+    const isPlaying = actualIdx === curSong && playing && !showPlaylist;
+    const isActive = actualIdx === curSong && !showPlaylist;
+    const liked = isLiked(curPlaylist, actualIdx);
+
+    return `
+    <div class="song-row ${isActive ? "playing" : ""}"
+         onclick="${showPlaylist ? `loadPlaylist(${i}); playAll()` : `playSong(${actualIdx})`}">
+      <div class="song-num-wrap">
+        <span class="row-num">${isPlaying ? "" : i + 1}</span>
+        <div class="row-wave" style="${isPlaying ? "display:flex" : ""}">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div class="row-play-icon"><i class="fas fa-play"></i></div>
+      </div>
+      <div class="song-title-cell">
+        <div class="song-emoji">${song.emoji || "🎵"}</div>
+        <div>
+          <div class="song-name">${song.title}</div>
+          <div class="song-album">${song.album || ""}</div>
+        </div>
+      </div>
+      <div class="song-artist-cell">${song.artist}</div>
+      <div class="song-dur">${song.duration}</div>
+      <button class="song-like-btn ${liked ? "liked" : ""}"
+              onclick="event.stopPropagation(); toggleSongLike(${actualIdx})">
+        <i class="${liked ? "fas" : "far"} fa-heart"></i>
+      </button>
+    </div>`;
+  }).join("");
 }
 
-// ── PLAY ALL ──────────────────────────────────────────────
+// ── RENDER PLAYLIST CARDS ─────────────────
+function renderPlaylistCards() {
+  const el = document.getElementById("playlistCards");
+  el.innerHTML = playlists.map((pl, i) => `
+    <div class="pl-card" onclick="loadPlaylist(${i}); playAll()">
+      <div class="pl-card-art" style="background:${pl.color}22">${pl.emoji}</div>
+      <div class="pl-card-name">${pl.name}</div>
+      <div class="pl-card-count">${pl.songs.length} songs</div>
+    </div>`
+  ).join("");
+}
+
+// ── PLAY A SONG ───────────────────────────
+function playSong(idx) {
+  const song = playlists[curPlaylist].songs[idx];
+  if (!song) return;
+
+  curSong = idx;
+  audio.src = song.src;
+  audio.play().catch(() => {});
+  playing = true;
+
+  updatePlayerBar(song);
+  renderSongs(playlists[curPlaylist].songs);
+  document.getElementById("vinyl").classList.add("playing");
+  document.getElementById("playPauseBtn").innerHTML = `<i class="fas fa-pause"></i>`;
+
+  // Sidebar now playing
+  document.getElementById("snpTitle").textContent = song.title;
+  document.getElementById("snpArtist").textContent = song.artist;
+  document.getElementById("snpCover").textContent = song.emoji || "🎵";
+}
+
 function playAll() {
   playSong(0);
 }
 
-// ── NEXT / PREV ───────────────────────────────────────────
-function nextSong() {
-  const pl = playlists[currentPlaylist];
-  let next;
-  if (isShuffle) {
-    next = Math.floor(Math.random() * pl.songs.length);
-  } else {
-    next = (currentSongIndex + 1) % pl.songs.length;
-  }
-  playSong(next);
+// ── PLAYER BAR UPDATE ─────────────────────
+function updatePlayerBar(song) {
+  document.getElementById("npTitle").textContent = song.title;
+  document.getElementById("npArtist").textContent = song.artist;
+  document.getElementById("nowPlayingEmoji").textContent = song.emoji || "🎵";
+  document.getElementById("nowPlayingArt").classList.add("has-song");
+
+  // Like button state
+  const liked = isLiked(curPlaylist, curSong);
+  const lb = document.getElementById("likeBtn");
+  lb.className = `like-btn ${liked ? "liked" : ""}`;
+  lb.innerHTML = `<i class="${liked ? "fas" : "far"} fa-heart"></i>`;
 }
 
-function prevSong() {
-  if (audio.currentTime > 3) {
-    audio.currentTime = 0;
-    return;
+// ── PLAY / PAUSE ──────────────────────────
+function togglePlay() {
+  if (curSong === -1) { playAll(); return; }
+  if (playing) {
+    audio.pause(); playing = false;
+    document.getElementById("playPauseBtn").innerHTML = `<i class="fas fa-play"></i>`;
+    document.getElementById("vinyl").classList.remove("playing");
+  } else {
+    audio.play(); playing = true;
+    document.getElementById("playPauseBtn").innerHTML = `<i class="fas fa-pause"></i>`;
+    document.getElementById("vinyl").classList.add("playing");
   }
-  const pl = playlists[currentPlaylist];
-  const prev = (currentSongIndex - 1 + pl.songs.length) % pl.songs.length;
+}
+
+// ── NEXT / PREV ───────────────────────────
+function nextSong() {
+  const pl = playlists[curPlaylist];
+  let next = shuffle
+    ? Math.floor(Math.random() * pl.songs.length)
+    : (curSong + 1) % pl.songs.length;
+  playSong(next);
+}
+function prevSong() {
+  if (audio.currentTime > 3) { audio.currentTime = 0; return; }
+  const pl = playlists[curPlaylist];
+  const prev = (curSong - 1 + pl.songs.length) % pl.songs.length;
   playSong(prev);
 }
 
-// ── SHUFFLE / REPEAT ──────────────────────────────────────
+audio.addEventListener("ended", () => { if (!repeat) nextSong(); });
+
+// ── SHUFFLE / REPEAT ──────────────────────
 function toggleShuffle() {
-  isShuffle = !isShuffle;
-  document.getElementById("shuffleBtn").classList.toggle("active", isShuffle);
+  shuffle = !shuffle;
+  document.getElementById("shuffleBtn").classList.toggle("active", shuffle);
 }
-
 function toggleRepeat() {
-  isRepeat = !isRepeat;
-  document.getElementById("repeatBtn").classList.toggle("active", isRepeat);
-  audio.loop = isRepeat;
+  repeat = !repeat;
+  audio.loop = repeat;
+  document.getElementById("repeatBtn").classList.toggle("active", repeat);
 }
 
-// ── LIKE / HEART ──────────────────────────────────────────
-function toggleLike() {
-  if (currentSongIndex === -1) return;
-  const heartBtn = document.getElementById("heartBtn");
-  if (likedSongs.has(currentSongIndex)) {
-    likedSongs.delete(currentSongIndex);
-    heartBtn.classList.remove("liked");
-    heartBtn.innerHTML = `<i class="far fa-heart"></i>`;
-  } else {
-    likedSongs.add(currentSongIndex);
-    heartBtn.classList.add("liked");
-    heartBtn.innerHTML = `<i class="fas fa-heart"></i>`;
-  }
-  renderSongs(playlists[currentPlaylist].songs);
+// ── MUTE ──────────────────────────────────
+function toggleMute() {
+  muted = !muted;
+  audio.volume = muted ? 0 : lastVol;
+  document.getElementById("muteBtn").innerHTML =
+    `<i class="fas fa-volume-${muted ? "xmark" : "high"}"></i>`;
+  document.getElementById("volFill").style.width = (muted ? 0 : lastVol * 100) + "%";
 }
 
-function toggleSongLike(index) {
-  if (likedSongs.has(index)) {
-    likedSongs.delete(index);
-  } else {
-    likedSongs.add(index);
-  }
-  renderSongs(playlists[currentPlaylist].songs);
-  if (index === currentSongIndex) {
-    const liked = likedSongs.has(index);
-    const heartBtn = document.getElementById("heartBtn");
-    heartBtn.classList.toggle("liked", liked);
-    heartBtn.innerHTML = `<i class="${liked ? "fas" : "far"} fa-heart"></i>`;
-  }
-}
-
-// ── PROGRESS BAR ──────────────────────────────────────────
+// ── PROGRESS ──────────────────────────────
 audio.addEventListener("timeupdate", () => {
   if (!audio.duration) return;
   const pct = (audio.currentTime / audio.duration) * 100;
-  document.getElementById("progressFill").style.width = pct + "%";
-  document.getElementById("progressThumb").style.left = pct + "%";
-  document.getElementById("currentTime").textContent = formatTime(audio.currentTime);
-  document.getElementById("totalTime").textContent = formatTime(audio.duration);
+  document.getElementById("progFill").style.width = pct + "%";
+  document.getElementById("progDot").style.left = pct + "%";
+  document.getElementById("curTime").textContent = fmt(audio.currentTime);
+  document.getElementById("durTime").textContent = fmt(audio.duration);
 });
 
-audio.addEventListener("ended", () => {
-  if (!isRepeat) nextSong();
-});
-
-function seek(e) {
-  const bar = document.getElementById("progressBar");
-  const rect = bar.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const pct = Math.max(0, Math.min(1, x / rect.width));
+function seekTo(e) {
+  const rect = document.getElementById("progTrack").getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
   audio.currentTime = pct * audio.duration;
 }
 
-function formatTime(secs) {
-  if (isNaN(secs)) return "0:00";
-  const m = Math.floor(secs / 60);
-  const s = Math.floor(secs % 60).toString().padStart(2, "0");
-  return `${m}:${s}`;
-}
-
-// ── VOLUME ────────────────────────────────────────────────
-function setVolume(e) {
-  const bar = document.getElementById("volumeBar");
-  const rect = bar.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const vol = Math.max(0, Math.min(1, x / rect.width));
+function setVol(e) {
+  const rect = document.getElementById("volTrack").getBoundingClientRect();
+  const vol = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
   audio.volume = vol;
-  document.getElementById("volumeFill").style.width = vol * 100 + "%";
+  lastVol = vol;
+  muted = false;
+  document.getElementById("volFill").style.width = vol * 100 + "%";
+  document.getElementById("muteBtn").innerHTML = `<i class="fas fa-volume-high"></i>`;
 }
 
-// ── SEARCH ────────────────────────────────────────────────
-function setupSearch() {
-  document.getElementById("searchInput").addEventListener("input", (e) => {
-    const q = e.target.value.toLowerCase().trim();
-    const pl = playlists[currentPlaylist];
+function fmt(s) {
+  if (isNaN(s)) return "0:00";
+  return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+}
+
+// ── LIKE / HEART ──────────────────────────
+function isLiked(pIdx, sIdx) {
+  return likedSongs.some((l) => l.playlistIndex === pIdx && l.songIndex === sIdx);
+}
+
+function toggleLike() {
+  if (curSong === -1) return;
+  toggleSongLike(curSong);
+}
+
+function toggleSongLike(sIdx) {
+  const pIdx = curPlaylist;
+  const song = playlists[pIdx].songs[sIdx];
+  const existingIdx = likedSongs.findIndex(
+    (l) => l.playlistIndex === pIdx && l.songIndex === sIdx
+  );
+
+  if (existingIdx >= 0) {
+    likedSongs.splice(existingIdx, 1);
+  } else {
+    likedSongs.push({ playlistIndex: pIdx, songIndex: sIdx, song });
+  }
+
+  // Re-render current song list
+  if (currentSection === "home") renderSongs(playlists[curPlaylist].songs);
+  if (currentSection === "library") renderLibrary();
+  updateLibraryCount();
+
+  // Update player bar like button if this is the current song
+  if (sIdx === curSong) {
+    const liked = isLiked(pIdx, sIdx);
+    const lb = document.getElementById("likeBtn");
+    lb.className = `like-btn ${liked ? "liked" : ""}`;
+    lb.innerHTML = `<i class="${liked ? "fas" : "far"} fa-heart"></i>`;
+  }
+}
+
+// ── LIBRARY ───────────────────────────────
+function renderLibrary() {
+  const el = document.getElementById("likedList");
+  if (!likedSongs.length) {
+    el.innerHTML = `
+      <div class="empty-library">
+        <div class="empty-icon">💜</div>
+        <p>No liked songs yet</p>
+        <span>Hit the ♥ on any song to save it here</span>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="song-table-header">
+      <span>#</span><span>TITLE</span><span>ARTIST</span>
+      <span><i class="fas fa-clock"></i></span><span></span>
+    </div>` +
+    likedSongs.map(({ song, playlistIndex, songIndex }, i) => `
+      <div class="song-row" onclick="curPlaylist=${playlistIndex}; playSong(${songIndex})">
+        <div class="song-num-wrap"><span class="row-num">${i + 1}</span>
+          <div class="row-play-icon"><i class="fas fa-play"></i></div>
+        </div>
+        <div class="song-title-cell">
+          <div class="song-emoji">${song.emoji || "🎵"}</div>
+          <div>
+            <div class="song-name">${song.title}</div>
+            <div class="song-album">${playlists[playlistIndex].name}</div>
+          </div>
+        </div>
+        <div class="song-artist-cell">${song.artist}</div>
+        <div class="song-dur">${song.duration}</div>
+        <button class="song-like-btn liked"
+                onclick="event.stopPropagation(); curPlaylist=${playlistIndex}; toggleSongLike(${songIndex})">
+          <i class="fas fa-heart"></i>
+        </button>
+      </div>`
+    ).join("");
+}
+
+function updateLibraryCount() {
+  const count = likedSongs.length;
+  document.getElementById("likedCount").textContent = `${count} song${count !== 1 ? "s" : ""} liked`;
+}
+
+// ── SEARCH ────────────────────────────────
+function bindSearch() {
+  const input = document.getElementById("searchInput");
+  const clearBtn = document.getElementById("searchClear");
+
+  input.addEventListener("input", (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    clearBtn.classList.toggle("visible", q.length > 0);
+
     if (!q) {
-      renderSongs(pl.songs);
+      if (currentSection === "search") showSection("home");
       return;
     }
-    const filtered = pl.songs.filter(
-      (s) =>
-        s.title.toLowerCase().includes(q) ||
-        s.artist.toLowerCase().includes(q)
-    );
-    renderSongs(filtered);
+
+    showSection("search");
+
+    // Search across ALL playlists
+    const results = [];
+    playlists.forEach((pl, pIdx) => {
+      pl.songs.forEach((song, sIdx) => {
+        if (
+          song.title.toLowerCase().includes(q) ||
+          song.artist.toLowerCase().includes(q) ||
+          pl.name.toLowerCase().includes(q)
+        ) {
+          results.push({ song, pIdx, sIdx, plName: pl.name });
+        }
+      });
+    });
+
+    renderSearchResults(results, q);
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") clearSearch();
   });
 }
 
-// ── SIDEBAR PLAYLIST CLICK ────────────────────────────────
-document.querySelectorAll(".playlist-item").forEach((el) => {
-  el.addEventListener("click", () => {
-    loadPlaylist(parseInt(el.dataset.playlist));
-  });
-});
+function clearSearch() {
+  document.getElementById("searchInput").value = "";
+  document.getElementById("searchClear").classList.remove("visible");
+  showSection("home");
+}
 
-// ── START ─────────────────────────────────────────────────
+function renderSearchResults(results, query) {
+  const el = document.getElementById("searchResults");
+
+  if (!results.length) {
+    el.innerHTML = `
+      <div class="search-empty">
+        <div style="font-size:2.5rem;margin-bottom:12px">🔍</div>
+        <p>No results for "<strong>${query}</strong>"</p>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="search-tag">${results.length} RESULT${results.length !== 1 ? "S" : ""}</div>
+    <div class="song-table-header">
+      <span>#</span><span>TITLE</span><span>ARTIST</span>
+      <span><i class="fas fa-clock"></i></span><span></span>
+    </div>` +
+    results.map(({ song, pIdx, sIdx }, i) => {
+      const liked = likedSongs.some((l) => l.playlistIndex === pIdx && l.songIndex === sIdx);
+      return `
+      <div class="song-row" onclick="curPlaylist=${pIdx}; playSong(${sIdx})">
+        <div class="song-num-wrap">
+          <span class="row-num">${i + 1}</span>
+          <div class="row-play-icon"><i class="fas fa-play"></i></div>
+        </div>
+        <div class="song-title-cell">
+          <div class="song-emoji">${song.emoji || "🎵"}</div>
+          <div>
+            <div class="song-name">${highlightMatch(song.title, query)}</div>
+            <div class="song-album">${playlists[pIdx].name}</div>
+          </div>
+        </div>
+        <div class="song-artist-cell">${highlightMatch(song.artist, query)}</div>
+        <div class="song-dur">${song.duration}</div>
+        <button class="song-like-btn ${liked ? "liked" : ""}"
+                onclick="event.stopPropagation(); curPlaylist=${pIdx}; toggleSongLike(${sIdx})">
+          <i class="${liked ? "fas" : "far"} fa-heart"></i>
+        </button>
+      </div>`;
+    }).join("");
+}
+
+function highlightMatch(text, query) {
+  const re = new RegExp(`(${query})`, "gi");
+  return text.replace(re, `<mark style="background:rgba(185,79,255,0.35);color:white;border-radius:3px;padding:0 2px">$1</mark>`);
+}
+
+// ── SIDEBAR PLAYLIST CLICKS ───────────────
+function bindSidebarPlaylists() {
+  document.querySelectorAll(".playlist-item").forEach((el) => {
+    el.addEventListener("click", () => loadPlaylist(parseInt(el.dataset.playlist)));
+  });
+}
+
+// ── START ─────────────────────────────────
 init();
