@@ -31,7 +31,7 @@
 html { font-size: 15px; }
 
 body {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   background: var(--bg);
   color: var(--text);
   display: grid;
@@ -212,7 +212,7 @@ body {
 .search-wrap i { color: var(--text-muted); font-size: 0.82rem; }
 .search-wrap input {
   flex: 1; background: none; border: none; outline: none;
-  color: var(--text); font-family: 'Outfit', sans-serif;
+  color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 0.88rem;
 }
 .search-wrap input::placeholder { color: var(--text-muted); }
@@ -228,7 +228,7 @@ body {
   border: 1px solid var(--border);
   color: var(--text-dim);
   padding: 8px 16px; border-radius: 50px;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 0.82rem; cursor: pointer;
   transition: all 0.2s; display: flex; align-items: center; gap: 8px;
 }
@@ -273,7 +273,7 @@ body {
 .btn-primary {
   background: var(--purple);
   border: none; cursor: pointer;
-  color: white; font-family: 'Outfit', sans-serif;
+  color: white; font-family: 'Plus Jakarta Sans', sans-serif;
   font-weight: 700; font-size: 0.88rem;
   padding: 12px 28px; border-radius: 50px;
   display: flex; align-items: center; gap: 8px;
@@ -286,7 +286,7 @@ body {
   background: rgba(255,255,255,0.07);
   border: 1px solid rgba(255,255,255,0.15);
   cursor: pointer; color: var(--text);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-weight: 600; font-size: 0.88rem;
   padding: 12px 22px; border-radius: 50px;
   display: flex; align-items: center; gap: 8px;
@@ -641,4 +641,47 @@ body {
   .song-table-header,
   .song-row { grid-template-columns: 36px 1fr 60px 40px; }
   .song-artist-cell { display: none; }
+}
+
+/* ── ALBUM ART IN SONG ROWS ─── */
+.song-cover-wrap {
+  width: 42px; height: 42px; flex-shrink: 0;
+  border-radius: 8px; overflow: hidden;
+  background: var(--surface3);
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border2);
+}
+.song-cover-img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.song-cover-fallback {
+  font-size: 1.2rem;
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+}
+
+/* ── LOADING SPINNER ────────── */
+.loading-state {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 60px 20px; gap: 16px;
+  color: var(--text-muted); font-size: 0.9rem;
+}
+.spinner {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 3px solid var(--surface3);
+  border-top-color: var(--purple);
+  animation: spin2 0.8s linear infinite;
+}
+@keyframes spin2 { to { transform: rotate(360deg); } }
+
+/* ── SEARCH TAG ─────────────── */
+.search-tag {
+  display: inline-block;
+  font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 1.5px; color: var(--purple);
+  background: rgba(185,79,255,0.1);
+  border: 1px solid rgba(185,79,255,0.2);
+  padding: 3px 12px; border-radius: 50px;
+  margin-bottom: 16px;
 }

@@ -5,13 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TuneFlow</title>
   <link rel="stylesheet" href="style.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
 <body>
 
-<!-- AMBIENT BACKGROUND BLOBS -->
 <div class="ambient">
   <div class="blob blob-1"></div>
   <div class="blob blob-2"></div>
@@ -37,13 +35,13 @@
   </div>
 
   <nav class="nav">
-    <a href="#" class="nav-item active" onclick="showSection('home')">
+    <a href="#" class="nav-item active" id="nav-home" onclick="showSection('home'); return false;">
       <i class="fas fa-house"></i><span>Home</span>
     </a>
-    <a href="#" class="nav-item" onclick="showSection('search')">
+    <a href="#" class="nav-item" id="nav-search" onclick="showSection('search'); return false;">
       <i class="fas fa-search"></i><span>Search</span>
     </a>
-    <a href="#" class="nav-item" onclick="showSection('library')">
+    <a href="#" class="nav-item" id="nav-library" onclick="showSection('library'); return false;">
       <i class="fas fa-heart"></i><span>Liked Songs</span>
     </a>
   </nav>
@@ -51,26 +49,33 @@
   <div class="sidebar-divider"></div>
 
   <div class="sidebar-section">
-    <p class="sidebar-label">PLAYLISTS</p>
-    <ul class="playlist-list" id="playlistList">
-      <li class="playlist-item active" data-playlist="0">
-        <span class="pl-dot" style="background:#b94fff"></span> Hot Right Now
+    <p class="sidebar-label">GENRES</p>
+    <ul class="playlist-list">
+      <li class="playlist-item active" onclick="loadGenre('lofi', this)">
+        <span class="pl-dot" style="background:#b94fff"></span> Lo-fi
       </li>
-      <li class="playlist-item" data-playlist="1">
-        <span class="pl-dot" style="background:#00d4ff"></span> Late Night Vibes
+      <li class="playlist-item" onclick="loadGenre('pop', this)">
+        <span class="pl-dot" style="background:#00d4ff"></span> Pop
       </li>
-      <li class="playlist-item" data-playlist="2">
-        <span class="pl-dot" style="background:#ff6b6b"></span> Energy Boost
+      <li class="playlist-item" onclick="loadGenre('rock', this)">
+        <span class="pl-dot" style="background:#ff6b6b"></span> Rock
       </li>
-      <li class="playlist-item" data-playlist="3">
-        <span class="pl-dot" style="background:#43e97b"></span> Chill Wave
+      <li class="playlist-item" onclick="loadGenre('hiphop', this)">
+        <span class="pl-dot" style="background:#f59e0b"></span> Hip-Hop
+      </li>
+      <li class="playlist-item" onclick="loadGenre('electronic', this)">
+        <span class="pl-dot" style="background:#43e97b"></span> Electronic
+      </li>
+      <li class="playlist-item" onclick="loadGenre('jazz', this)">
+        <span class="pl-dot" style="background:#ec4899"></span> Jazz
       </li>
     </ul>
   </div>
 
-  <!-- MINI NOW PLAYING IN SIDEBAR -->
   <div class="sidebar-now-playing" id="sidebarNowPlaying">
-    <div class="snp-cover" id="snpCover">🎵</div>
+    <div class="snp-cover" id="snpCover">
+      <i class="fas fa-music"></i>
+    </div>
     <div class="snp-info">
       <p class="snp-title" id="snpTitle">Nothing playing</p>
       <p class="snp-artist" id="snpArtist">—</p>
@@ -79,8 +84,7 @@
 </aside>
 
 <!-- MAIN -->
-<main class="main" id="mainContent">
-
+<main class="main">
   <header class="topbar">
     <div class="topbar-nav">
       <button class="icon-btn"><i class="fas fa-chevron-left"></i></button>
@@ -88,7 +92,7 @@
     </div>
     <div class="search-wrap">
       <i class="fas fa-search"></i>
-      <input type="text" id="searchInput" placeholder="Songs, artists..."/>
+      <input type="text" id="searchInput" placeholder="Search real songs, artists..."/>
       <button class="search-clear" id="searchClear" onclick="clearSearch()">
         <i class="fas fa-times"></i>
       </button>
@@ -98,15 +102,14 @@
     </div>
   </header>
 
-  <!-- HOME SECTION -->
+  <!-- HOME -->
   <div id="section-home">
-    <!-- BANNER -->
     <section class="banner" id="banner">
       <div class="banner-glow"></div>
       <div class="banner-content">
-        <span class="banner-tag">✦ NOW PLAYING</span>
-        <h1 class="banner-title" id="bannerTitle">Hot Right Now</h1>
-        <p class="banner-meta" id="bannerMeta">4 songs • Lo-fi Chill</p>
+        <span class="banner-tag">✦ STREAMING LIVE</span>
+        <h1 class="banner-title" id="bannerTitle">Lo-fi Beats</h1>
+        <p class="banner-meta" id="bannerMeta">Real songs from Jamendo • Free & Legal</p>
         <div class="banner-actions">
           <button class="btn-primary" onclick="playAll()">
             <i class="fas fa-play"></i> Play All
@@ -118,9 +121,8 @@
       </div>
       <div class="banner-visual">
         <div class="vinyl" id="vinyl">
-          <div class="vinyl-grooves"></div>
-          <div class="vinyl-label">
-            <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
+          <div class="vinyl-label" id="vinylArt">
+            <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
               <path d="M9 10 L9 18 M13 7 L13 21 M17 11 L17 17 M21 9 L21 19" stroke="#b94fff" stroke-width="2.5" stroke-linecap="round"/>
             </svg>
           </div>
@@ -129,38 +131,43 @@
       </div>
     </section>
 
-    <!-- TRACKLIST -->
     <section class="content-section">
       <div class="section-header">
-        <h2 class="section-title">Tracklist</h2>
+        <h2 class="section-title" id="sectionTitle">Tracklist</h2>
         <span class="song-count" id="songCount"></span>
       </div>
       <div class="song-table-header">
-        <span>#</span>
-        <span>TITLE</span>
-        <span>ARTIST</span>
-        <span><i class="fas fa-clock"></i></span>
-        <span></span>
+        <span>#</span><span>TITLE</span><span>ARTIST</span>
+        <span><i class="fas fa-clock"></i></span><span></span>
       </div>
-      <div id="songList"></div>
+      <div id="songList">
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading real songs...</p>
+        </div>
+      </div>
     </section>
 
-    <!-- PLAYLIST CARDS -->
     <section class="content-section">
-      <h2 class="section-title">Browse Playlists</h2>
-      <div class="cards-grid" id="playlistCards"></div>
+      <h2 class="section-title">Browse by Genre</h2>
+      <div class="cards-grid" id="genreCards"></div>
     </section>
   </div>
 
-  <!-- SEARCH SECTION -->
+  <!-- SEARCH -->
   <div id="section-search" style="display:none">
     <div class="content-section">
       <h2 class="section-title">Search Results</h2>
-      <div id="searchResults"></div>
+      <div id="searchResults">
+        <div class="search-empty">
+          <div style="font-size:2.5rem;margin-bottom:12px">🎵</div>
+          <p>Type something to search real songs</p>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- LIBRARY SECTION -->
+  <!-- LIBRARY -->
   <div id="section-library" style="display:none">
     <div class="content-section">
       <div class="library-header">
@@ -176,14 +183,14 @@
       </div>
     </div>
   </div>
-
 </main>
 
 <!-- PLAYER -->
-<footer class="player" id="player">
+<footer class="player">
   <div class="player-left">
     <div class="now-playing-art" id="nowPlayingArt">
-      <span id="nowPlayingEmoji">🎵</span>
+      <img id="nowPlayingImg" src="" alt="" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:10px;"/>
+      <span id="nowPlayingIcon"><i class="fas fa-music"></i></span>
       <div class="art-glow" id="artGlow"></div>
     </div>
     <div class="now-playing-info">
@@ -197,21 +204,11 @@
 
   <div class="player-center">
     <div class="ctrl-row">
-      <button class="ctrl" id="shuffleBtn" onclick="toggleShuffle()" title="Shuffle">
-        <i class="fas fa-shuffle"></i>
-      </button>
-      <button class="ctrl" onclick="prevSong()" title="Previous">
-        <i class="fas fa-backward-step"></i>
-      </button>
-      <button class="play-pause" id="playPauseBtn" onclick="togglePlay()">
-        <i class="fas fa-play"></i>
-      </button>
-      <button class="ctrl" onclick="nextSong()" title="Next">
-        <i class="fas fa-forward-step"></i>
-      </button>
-      <button class="ctrl" id="repeatBtn" onclick="toggleRepeat()" title="Repeat">
-        <i class="fas fa-repeat"></i>
-      </button>
+      <button class="ctrl" id="shuffleBtn" onclick="toggleShuffle()"><i class="fas fa-shuffle"></i></button>
+      <button class="ctrl" onclick="prevSong()"><i class="fas fa-backward-step"></i></button>
+      <button class="play-pause" id="playPauseBtn" onclick="togglePlay()"><i class="fas fa-play"></i></button>
+      <button class="ctrl" onclick="nextSong()"><i class="fas fa-forward-step"></i></button>
+      <button class="ctrl" id="repeatBtn" onclick="toggleRepeat()"><i class="fas fa-repeat"></i></button>
     </div>
     <div class="progress-row">
       <span class="time-label" id="curTime">0:00</span>
@@ -224,16 +221,14 @@
   </div>
 
   <div class="player-right">
-    <button class="ctrl" id="muteBtn" onclick="toggleMute()">
-      <i class="fas fa-volume-high"></i>
-    </button>
-    <div class="vol-track" id="volTrack" onclick="setVol(event)">
+    <button class="ctrl" onclick="toggleMute()" id="muteBtn"><i class="fas fa-volume-high"></i></button>
+    <div class="vol-track" onclick="setVol(event)">
       <div class="vol-fill" id="volFill" style="width:80%"></div>
     </div>
   </div>
 </footer>
 
-<audio id="audio"></audio>
+<audio id="audio" crossorigin="anonymous"></audio>
 <script src="app.js"></script>
 </body>
 </html>

@@ -1,221 +1,108 @@
 // ============================================================
-//  TUNEFLOW v2 — app.js
-//  Real lo-fi songs from Free Music Archive & public sources
-//  Working Search, Working Library (Liked Songs)
+//  TUNEFLOW v3 — app.js
+//  Powered by Jamendo API — Real songs, real artists!
+//  Client ID: a72d03df
 // ============================================================
 
-// ── REAL FREE LO-FI SONGS (public domain / CC licensed) ───
-const playlists = [
-  {
-    name: "Hot Right Now",
-    emoji: "🔥",
-    color: "#b94fff",
-    bg: "linear-gradient(135deg, #120a20 0%, #1a0a30 40%, #0a1520 100%)",
-    songs: [
-      {
-        title: "Chill Lo-fi Beat",
-        artist: "Free Music Archive",
-        album: "Lo-fi Collection",
-        duration: "2:30",
-        emoji: "🌙",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-      },
-      {
-        title: "Rainy Day Vibes",
-        artist: "Lofi Dreamer",
-        album: "Rainy Sessions",
-        duration: "3:10",
-        emoji: "🌧️",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-      },
-      {
-        title: "Midnight Coffee",
-        artist: "ChillHop Studio",
-        album: "After Hours",
-        duration: "2:55",
-        emoji: "☕",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-      },
-      {
-        title: "Soft Glow",
-        artist: "Ambient Waves",
-        album: "Neon Dreams",
-        duration: "3:40",
-        emoji: "✨",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
-      },
-    ],
-  },
-  {
-    name: "Late Night Vibes",
-    emoji: "🌙",
-    color: "#00d4ff",
-    bg: "linear-gradient(135deg, #050d1a 0%, #0a1530 40%, #050810 100%)",
-    songs: [
-      {
-        title: "City at 3AM",
-        artist: "Night Owl",
-        album: "Late Night Drives",
-        duration: "4:00",
-        emoji: "🏙️",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
-      },
-      {
-        title: "Sleepy Beats",
-        artist: "Dream Machine",
-        album: "Sleep Tapes",
-        duration: "3:25",
-        emoji: "💤",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
-      },
-      {
-        title: "Slow Motion",
-        artist: "The Dreamers",
-        album: "Float",
-        duration: "5:00",
-        emoji: "🌊",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
-      },
-    ],
-  },
-  {
-    name: "Energy Boost",
-    emoji: "⚡",
-    color: "#ff6b6b",
-    bg: "linear-gradient(135deg, #1a0505 0%, #2a0a0a 40%, #1a0510 100%)",
-    songs: [
-      {
-        title: "Power Hour",
-        artist: "Beat Force",
-        album: "Hustle Mode",
-        duration: "2:58",
-        emoji: "💪",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
-      },
-      {
-        title: "Rise Up",
-        artist: "Chase Mode",
-        album: "Grind",
-        duration: "3:22",
-        emoji: "🏃",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3",
-      },
-    ],
-  },
-  {
-    name: "Chill Wave",
-    emoji: "🌊",
-    color: "#43e97b",
-    bg: "linear-gradient(135deg, #041510 0%, #081f15 40%, #050f1a 100%)",
-    songs: [
-      {
-        title: "Ocean Floor",
-        artist: "Serene Waves",
-        album: "Deep Blue",
-        duration: "4:45",
-        emoji: "🐚",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3",
-      },
-      {
-        title: "Floating",
-        artist: "Drift Theory",
-        album: "Weightless",
-        duration: "6:00",
-        emoji: "☁️",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3",
-      },
-      {
-        title: "Pastel Skies",
-        artist: "Soft Palette",
-        album: "Watercolour",
-        duration: "3:50",
-        emoji: "🎨",
-        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3",
-      },
-    ],
-  },
-];
+const JAMENDO_ID = "a72d03df";
+const JAMENDO   = "https://api.jamendo.com/v3.0";
 
 // ── STATE ─────────────────────────────────
-let curPlaylist = 0;
-let curSong = -1;
-let playing = false;
-let shuffle = false;
-let repeat = false;
-let likedSongs = []; // [{playlistIndex, songIndex, song}]
+let songs        = [];       // current tracklist
+let curIdx       = -1;       // index in songs[]
+let playing      = false;
+let shuffle      = false;
+let repeat       = false;
+let muted        = false;
+let lastVol      = 0.8;
+let likedSongs   = JSON.parse(localStorage.getItem("tf_liked") || "[]");
+let curGenre     = "lofi";
+let searchTimer  = null;
 let currentSection = "home";
-let muted = false;
-let lastVol = 0.8;
 
 const audio = document.getElementById("audio");
 audio.volume = 0.8;
 
+// ── GENRE CONFIG ──────────────────────────
+const genres = [
+  { id: "lofi",       label: "Lo-fi",       emoji: "🌙", color: "#b94fff", tags: "lofi" },
+  { id: "pop",        label: "Pop",          emoji: "🎤", color: "#00d4ff", tags: "pop" },
+  { id: "rock",       label: "Rock",         emoji: "🎸", color: "#ff6b6b", tags: "rock" },
+  { id: "hiphop",     label: "Hip-Hop",      emoji: "🎧", color: "#f59e0b", tags: "hiphop" },
+  { id: "electronic", label: "Electronic",   emoji: "⚡", color: "#43e97b", tags: "electronic" },
+  { id: "jazz",       label: "Jazz",         emoji: "🎷", color: "#ec4899", tags: "jazz" },
+];
+
 // ── BOOT ──────────────────────────────────
 function init() {
-  renderPlaylistCards();
-  loadPlaylist(0);
-  bindSidebarPlaylists();
+  renderGenreCards();
+  loadGenre("lofi", document.querySelector(".playlist-item"));
   bindSearch();
-  updateLibraryCount();
 }
 
-// ── SECTION SWITCHING ─────────────────────
-function showSection(name) {
-  currentSection = name;
-  ["home", "search", "library"].forEach((s) => {
-    document.getElementById(`section-${s}`).style.display = s === name ? "block" : "none";
-  });
+// ── FETCH FROM JAMENDO ────────────────────
+async function fetchTracks(params) {
+  const url = new URL(`${JAMENDO}/tracks/`);
+  url.searchParams.set("client_id", JAMENDO_ID);
+  url.searchParams.set("format", "json");
+  url.searchParams.set("limit", "20");
+  url.searchParams.set("audioformat", "mp31");
+  url.searchParams.set("imagesize", "200");
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
-  // Update nav active state
-  document.querySelectorAll(".nav-item").forEach((el, i) => {
-    const sections = ["home", "search", "library"];
-    el.classList.toggle("active", sections[i] === name);
-  });
-
-  if (name === "library") renderLibrary();
-  if (name === "search") {
-    document.getElementById("searchInput").focus();
+  try {
+    const res  = await fetch(url.toString());
+    const data = await res.json();
+    return data.results || [];
+  } catch (e) {
+    console.error("Jamendo fetch error:", e);
+    return [];
   }
 }
 
-// ── LOAD PLAYLIST ─────────────────────────
-function loadPlaylist(idx) {
-  curPlaylist = idx;
-  curSong = -1;
-  const pl = playlists[idx];
+// ── LOAD GENRE ────────────────────────────
+async function loadGenre(genreId, el) {
+  curGenre = genreId;
+  curIdx = -1;
+  const g = genres.find(x => x.id === genreId);
 
-  // Sidebar
-  document.querySelectorAll(".playlist-item").forEach((el, i) =>
-    el.classList.toggle("active", i === idx)
-  );
+  // Sidebar active
+  document.querySelectorAll(".playlist-item").forEach(li => li.classList.remove("active"));
+  if (el) el.classList.add("active");
 
   // Banner
-  document.getElementById("bannerTitle").textContent = pl.name;
-  document.getElementById("bannerMeta").textContent = `${pl.songs.length} songs • Lo-fi Chill`;
-  document.getElementById("banner").style.background = pl.bg;
+  document.getElementById("bannerTitle").textContent = g.label;
+  document.getElementById("bannerMeta").textContent = "Real songs from Jamendo • Free & Legal";
+  document.getElementById("sectionTitle").textContent = g.label + " Tracks";
+  document.getElementById("banner").style.background =
+    `linear-gradient(135deg, #0e0820 0%, ${g.color}22 60%, #080810 100%)`;
 
-  renderSongs(pl.songs);
-  document.getElementById("songCount").textContent = `${pl.songs.length} songs`;
   showSection("home");
+  showLoading();
+
+  const tracks = await fetchTracks({ tags: g.tags, orderby: "popularity_total" });
+  songs = tracks;
+  renderSongs(songs, "songList");
+  document.getElementById("songCount").textContent = `${songs.length} songs`;
 }
 
 // ── RENDER SONGS ──────────────────────────
-function renderSongs(songs, container = "songList", showPlaylist = false) {
-  const el = document.getElementById(container);
-  if (!songs.length) {
-    el.innerHTML = `<div class="search-empty">No songs found 🎵</div>`;
+function renderSongs(list, containerId) {
+  const el = document.getElementById(containerId);
+  if (!list.length) {
+    el.innerHTML = `<div class="search-empty"><div style="font-size:2rem;margin-bottom:10px">😔</div><p>No songs found</p></div>`;
     return;
   }
 
-  el.innerHTML = songs.map((song, i) => {
-    const actualIdx = playlists[curPlaylist].songs.indexOf(song);
-    const isPlaying = actualIdx === curSong && playing && !showPlaylist;
-    const isActive = actualIdx === curSong && !showPlaylist;
-    const liked = isLiked(curPlaylist, actualIdx);
+  el.innerHTML = list.map((song, i) => {
+    const isActive  = i === curIdx && containerId === "songList";
+    const isPlaying = isActive && playing;
+    const liked     = isLiked(song.id);
+    const dur       = fmtSec(song.duration);
+    const cover     = song.album_image || "";
 
     return `
-    <div class="song-row ${isActive ? "playing" : ""}"
-         onclick="${showPlaylist ? `loadPlaylist(${i}); playAll()` : `playSong(${actualIdx})`}">
+    <div class="song-row ${isActive ? "playing" : ""}" onclick="playSongObj(${i}, '${containerId}')">
       <div class="song-num-wrap">
         <span class="row-num">${isPlaying ? "" : i + 1}</span>
         <div class="row-wave" style="${isPlaying ? "display:flex" : ""}">
@@ -224,76 +111,90 @@ function renderSongs(songs, container = "songList", showPlaylist = false) {
         <div class="row-play-icon"><i class="fas fa-play"></i></div>
       </div>
       <div class="song-title-cell">
-        <div class="song-emoji">${song.emoji || "🎵"}</div>
+        <div class="song-cover-wrap">
+          ${cover
+            ? `<img src="${cover}" alt="" class="song-cover-img" onerror="this.style.display='none';this.nextSibling.style.display='flex'"/>
+               <div class="song-cover-fallback" style="display:none">🎵</div>`
+            : `<div class="song-cover-fallback">🎵</div>`
+          }
+        </div>
         <div>
-          <div class="song-name">${song.title}</div>
-          <div class="song-album">${song.album || ""}</div>
+          <div class="song-name">${song.name}</div>
+          <div class="song-album">${song.album_name || ""}</div>
         </div>
       </div>
-      <div class="song-artist-cell">${song.artist}</div>
-      <div class="song-dur">${song.duration}</div>
+      <div class="song-artist-cell">${song.artist_name}</div>
+      <div class="song-dur">${dur}</div>
       <button class="song-like-btn ${liked ? "liked" : ""}"
-              onclick="event.stopPropagation(); toggleSongLike(${actualIdx})">
+              onclick="event.stopPropagation(); toggleSongLike('${song.id}', ${i})">
         <i class="${liked ? "fas" : "far"} fa-heart"></i>
       </button>
     </div>`;
   }).join("");
 }
 
-// ── RENDER PLAYLIST CARDS ─────────────────
-function renderPlaylistCards() {
-  const el = document.getElementById("playlistCards");
-  el.innerHTML = playlists.map((pl, i) => `
-    <div class="pl-card" onclick="loadPlaylist(${i}); playAll()">
-      <div class="pl-card-art" style="background:${pl.color}22">${pl.emoji}</div>
-      <div class="pl-card-name">${pl.name}</div>
-      <div class="pl-card-count">${pl.songs.length} songs</div>
-    </div>`
-  ).join("");
-}
+// ── PLAY ──────────────────────────────────
+function playSongObj(idx, containerId = "songList") {
+  // If playing from search results, load those songs
+  if (containerId === "searchResults") {
+    const searchSongs = window._searchSongs || [];
+    if (searchSongs.length) { songs = searchSongs; }
+  }
+  if (containerId === "likedList") {
+    songs = likedSongs.map(l => l.track);
+  }
 
-// ── PLAY A SONG ───────────────────────────
-function playSong(idx) {
-  const song = playlists[curPlaylist].songs[idx];
-  if (!song) return;
+  const song = songs[idx];
+  if (!song || !song.audio) {
+    showToast("⚠️ This track has no preview available");
+    return;
+  }
 
-  curSong = idx;
-  audio.src = song.src;
-  audio.play().catch(() => {});
+  curIdx = idx;
+  audio.src = song.audio;
+  audio.play().catch(() => showToast("Click play to start"));
   playing = true;
 
   updatePlayerBar(song);
-  renderSongs(playlists[curPlaylist].songs);
+  renderSongs(songs, containerId === "searchResults" ? "searchResults" : "songList");
   document.getElementById("vinyl").classList.add("playing");
   document.getElementById("playPauseBtn").innerHTML = `<i class="fas fa-pause"></i>`;
-
-  // Sidebar now playing
-  document.getElementById("snpTitle").textContent = song.title;
-  document.getElementById("snpArtist").textContent = song.artist;
-  document.getElementById("snpCover").textContent = song.emoji || "🎵";
 }
 
-function playAll() {
-  playSong(0);
-}
+function playAll() { if (songs.length) playSongObj(0); }
 
-// ── PLAYER BAR UPDATE ─────────────────────
+// ── PLAYER BAR ────────────────────────────
 function updatePlayerBar(song) {
-  document.getElementById("npTitle").textContent = song.title;
-  document.getElementById("npArtist").textContent = song.artist;
-  document.getElementById("nowPlayingEmoji").textContent = song.emoji || "🎵";
+  document.getElementById("npTitle").textContent   = song.name;
+  document.getElementById("npArtist").textContent  = song.artist_name;
+  document.getElementById("snpTitle").textContent  = song.name;
+  document.getElementById("snpArtist").textContent = song.artist_name;
+
+  // Album art
+  const img  = document.getElementById("nowPlayingImg");
+  const icon = document.getElementById("nowPlayingIcon");
+  if (song.album_image) {
+    img.src           = song.album_image;
+    img.style.display = "block";
+    icon.style.display = "none";
+    document.getElementById("snpCover").innerHTML = `<img src="${song.album_image}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;"/>`;
+  } else {
+    img.style.display  = "none";
+    icon.style.display = "block";
+  }
+
   document.getElementById("nowPlayingArt").classList.add("has-song");
 
-  // Like button state
-  const liked = isLiked(curPlaylist, curSong);
+  // Like btn
+  const liked = isLiked(song.id);
   const lb = document.getElementById("likeBtn");
-  lb.className = `like-btn ${liked ? "liked" : ""}`;
-  lb.innerHTML = `<i class="${liked ? "fas" : "far"} fa-heart"></i>`;
+  lb.className  = `like-btn ${liked ? "liked" : ""}`;
+  lb.innerHTML  = `<i class="${liked ? "fas" : "far"} fa-heart"></i>`;
 }
 
-// ── PLAY / PAUSE ──────────────────────────
+// ── CONTROLS ──────────────────────────────
 function togglePlay() {
-  if (curSong === -1) { playAll(); return; }
+  if (curIdx === -1) { playAll(); return; }
   if (playing) {
     audio.pause(); playing = false;
     document.getElementById("playPauseBtn").innerHTML = `<i class="fas fa-play"></i>`;
@@ -305,24 +206,21 @@ function togglePlay() {
   }
 }
 
-// ── NEXT / PREV ───────────────────────────
 function nextSong() {
-  const pl = playlists[curPlaylist];
-  let next = shuffle
-    ? Math.floor(Math.random() * pl.songs.length)
-    : (curSong + 1) % pl.songs.length;
-  playSong(next);
+  if (!songs.length) return;
+  const next = shuffle
+    ? Math.floor(Math.random() * songs.length)
+    : (curIdx + 1) % songs.length;
+  playSongObj(next);
 }
 function prevSong() {
   if (audio.currentTime > 3) { audio.currentTime = 0; return; }
-  const pl = playlists[curPlaylist];
-  const prev = (curSong - 1 + pl.songs.length) % pl.songs.length;
-  playSong(prev);
+  const prev = (curIdx - 1 + songs.length) % songs.length;
+  playSongObj(prev);
 }
 
 audio.addEventListener("ended", () => { if (!repeat) nextSong(); });
 
-// ── SHUFFLE / REPEAT ──────────────────────
 function toggleShuffle() {
   shuffle = !shuffle;
   document.getElementById("shuffleBtn").classList.toggle("active", shuffle);
@@ -332,8 +230,6 @@ function toggleRepeat() {
   audio.loop = repeat;
   document.getElementById("repeatBtn").classList.toggle("active", repeat);
 }
-
-// ── MUTE ──────────────────────────────────
 function toggleMute() {
   muted = !muted;
   audio.volume = muted ? 0 : lastVol;
@@ -347,63 +243,53 @@ audio.addEventListener("timeupdate", () => {
   if (!audio.duration) return;
   const pct = (audio.currentTime / audio.duration) * 100;
   document.getElementById("progFill").style.width = pct + "%";
-  document.getElementById("progDot").style.left = pct + "%";
-  document.getElementById("curTime").textContent = fmt(audio.currentTime);
-  document.getElementById("durTime").textContent = fmt(audio.duration);
+  document.getElementById("progDot").style.left   = pct + "%";
+  document.getElementById("curTime").textContent  = fmt(audio.currentTime);
+  document.getElementById("durTime").textContent  = fmt(audio.duration);
 });
 
 function seekTo(e) {
   const rect = document.getElementById("progTrack").getBoundingClientRect();
-  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-  audio.currentTime = pct * audio.duration;
+  audio.currentTime = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * audio.duration;
 }
-
 function setVol(e) {
-  const rect = document.getElementById("volTrack").getBoundingClientRect();
-  const vol = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-  audio.volume = vol;
-  lastVol = vol;
-  muted = false;
+  const rect = document.getElementById("volFill").parentElement.getBoundingClientRect();
+  const vol  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  audio.volume = vol; lastVol = vol; muted = false;
   document.getElementById("volFill").style.width = vol * 100 + "%";
   document.getElementById("muteBtn").innerHTML = `<i class="fas fa-volume-high"></i>`;
 }
 
-function fmt(s) {
-  if (isNaN(s)) return "0:00";
-  return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
-}
+// ── LIKE ──────────────────────────────────
+function isLiked(id) { return likedSongs.some(l => l.id === id); }
 
-// ── LIKE / HEART ──────────────────────────
-function isLiked(pIdx, sIdx) {
-  return likedSongs.some((l) => l.playlistIndex === pIdx && l.songIndex === sIdx);
-}
+function saveLiked() { localStorage.setItem("tf_liked", JSON.stringify(likedSongs)); }
 
 function toggleLike() {
-  if (curSong === -1) return;
-  toggleSongLike(curSong);
+  if (curIdx === -1 || !songs[curIdx]) return;
+  toggleSongLike(songs[curIdx].id, curIdx);
 }
 
-function toggleSongLike(sIdx) {
-  const pIdx = curPlaylist;
-  const song = playlists[pIdx].songs[sIdx];
-  const existingIdx = likedSongs.findIndex(
-    (l) => l.playlistIndex === pIdx && l.songIndex === sIdx
-  );
-
-  if (existingIdx >= 0) {
-    likedSongs.splice(existingIdx, 1);
+function toggleSongLike(trackId, idx) {
+  const song  = songs[idx];
+  const exist = likedSongs.findIndex(l => l.id === trackId);
+  if (exist >= 0) {
+    likedSongs.splice(exist, 1);
+    showToast("Removed from Liked Songs");
   } else {
-    likedSongs.push({ playlistIndex: pIdx, songIndex: sIdx, song });
+    likedSongs.push({ id: trackId, track: song });
+    showToast("❤️ Added to Liked Songs");
   }
+  saveLiked();
+  updateLikedCount();
 
-  // Re-render current song list
-  if (currentSection === "home") renderSongs(playlists[curPlaylist].songs);
+  // Re-render
+  renderSongs(songs, "songList");
   if (currentSection === "library") renderLibrary();
-  updateLibraryCount();
 
-  // Update player bar like button if this is the current song
-  if (sIdx === curSong) {
-    const liked = isLiked(pIdx, sIdx);
+  // Player bar
+  if (idx === curIdx) {
+    const liked = isLiked(trackId);
     const lb = document.getElementById("likeBtn");
     lb.className = `like-btn ${liked ? "liked" : ""}`;
     lb.innerHTML = `<i class="${liked ? "fas" : "far"} fa-heart"></i>`;
@@ -423,135 +309,187 @@ function renderLibrary() {
     return;
   }
 
+  const list = likedSongs.map(l => l.track);
   el.innerHTML = `
     <div class="song-table-header">
       <span>#</span><span>TITLE</span><span>ARTIST</span>
       <span><i class="fas fa-clock"></i></span><span></span>
     </div>` +
-    likedSongs.map(({ song, playlistIndex, songIndex }, i) => `
-      <div class="song-row" onclick="curPlaylist=${playlistIndex}; playSong(${songIndex})">
-        <div class="song-num-wrap"><span class="row-num">${i + 1}</span>
-          <div class="row-play-icon"><i class="fas fa-play"></i></div>
-        </div>
-        <div class="song-title-cell">
-          <div class="song-emoji">${song.emoji || "🎵"}</div>
-          <div>
-            <div class="song-name">${song.title}</div>
-            <div class="song-album">${playlists[playlistIndex].name}</div>
-          </div>
-        </div>
-        <div class="song-artist-cell">${song.artist}</div>
-        <div class="song-dur">${song.duration}</div>
-        <button class="song-like-btn liked"
-                onclick="event.stopPropagation(); curPlaylist=${playlistIndex}; toggleSongLike(${songIndex})">
-          <i class="fas fa-heart"></i>
-        </button>
-      </div>`
-    ).join("");
-}
-
-function updateLibraryCount() {
-  const count = likedSongs.length;
-  document.getElementById("likedCount").textContent = `${count} song${count !== 1 ? "s" : ""} liked`;
-}
-
-// ── SEARCH ────────────────────────────────
-function bindSearch() {
-  const input = document.getElementById("searchInput");
-  const clearBtn = document.getElementById("searchClear");
-
-  input.addEventListener("input", (e) => {
-    const q = e.target.value.trim().toLowerCase();
-    clearBtn.classList.toggle("visible", q.length > 0);
-
-    if (!q) {
-      if (currentSection === "search") showSection("home");
-      return;
-    }
-
-    showSection("search");
-
-    // Search across ALL playlists
-    const results = [];
-    playlists.forEach((pl, pIdx) => {
-      pl.songs.forEach((song, sIdx) => {
-        if (
-          song.title.toLowerCase().includes(q) ||
-          song.artist.toLowerCase().includes(q) ||
-          pl.name.toLowerCase().includes(q)
-        ) {
-          results.push({ song, pIdx, sIdx, plName: pl.name });
-        }
-      });
-    });
-
-    renderSearchResults(results, q);
-  });
-
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") clearSearch();
-  });
-}
-
-function clearSearch() {
-  document.getElementById("searchInput").value = "";
-  document.getElementById("searchClear").classList.remove("visible");
-  showSection("home");
-}
-
-function renderSearchResults(results, query) {
-  const el = document.getElementById("searchResults");
-
-  if (!results.length) {
-    el.innerHTML = `
-      <div class="search-empty">
-        <div style="font-size:2.5rem;margin-bottom:12px">🔍</div>
-        <p>No results for "<strong>${query}</strong>"</p>
-      </div>`;
-    return;
-  }
-
-  el.innerHTML = `
-    <div class="search-tag">${results.length} RESULT${results.length !== 1 ? "S" : ""}</div>
-    <div class="song-table-header">
-      <span>#</span><span>TITLE</span><span>ARTIST</span>
-      <span><i class="fas fa-clock"></i></span><span></span>
-    </div>` +
-    results.map(({ song, pIdx, sIdx }, i) => {
-      const liked = likedSongs.some((l) => l.playlistIndex === pIdx && l.songIndex === sIdx);
+    list.map((song, i) => {
+      const dur = fmtSec(song.duration);
       return `
-      <div class="song-row" onclick="curPlaylist=${pIdx}; playSong(${sIdx})">
+      <div class="song-row" onclick="songs=window._likedTracks; curIdx=${i}; playSongObj(${i}, 'likedList')">
         <div class="song-num-wrap">
           <span class="row-num">${i + 1}</span>
           <div class="row-play-icon"><i class="fas fa-play"></i></div>
         </div>
         <div class="song-title-cell">
-          <div class="song-emoji">${song.emoji || "🎵"}</div>
+          <div class="song-cover-wrap">
+            ${song.album_image
+              ? `<img src="${song.album_image}" class="song-cover-img"/>`
+              : `<div class="song-cover-fallback">🎵</div>`}
+          </div>
           <div>
-            <div class="song-name">${highlightMatch(song.title, query)}</div>
-            <div class="song-album">${playlists[pIdx].name}</div>
+            <div class="song-name">${song.name}</div>
+            <div class="song-album">${song.album_name || ""}</div>
           </div>
         </div>
-        <div class="song-artist-cell">${highlightMatch(song.artist, query)}</div>
-        <div class="song-dur">${song.duration}</div>
+        <div class="song-artist-cell">${song.artist_name}</div>
+        <div class="song-dur">${dur}</div>
+        <button class="song-like-btn liked"
+                onclick="event.stopPropagation(); likedSongs.splice(${i},1); saveLiked(); renderLibrary(); updateLikedCount()">
+          <i class="fas fa-heart"></i>
+        </button>
+      </div>`;
+    }).join("");
+
+  window._likedTracks = list;
+}
+
+function updateLikedCount() {
+  const c = likedSongs.length;
+  document.getElementById("likedCount").textContent = `${c} song${c !== 1 ? "s" : ""} liked`;
+}
+
+// ── SEARCH ────────────────────────────────
+function bindSearch() {
+  const input    = document.getElementById("searchInput");
+  const clearBtn = document.getElementById("searchClear");
+
+  input.addEventListener("input", e => {
+    const q = e.target.value.trim();
+    clearBtn.classList.toggle("visible", q.length > 0);
+    clearTimeout(searchTimer);
+
+    if (!q) { showSection("home"); return; }
+
+    showSection("search");
+    document.getElementById("searchResults").innerHTML = `
+      <div class="loading-state"><div class="spinner"></div><p>Searching Jamendo...</p></div>`;
+
+    searchTimer = setTimeout(() => doSearch(q), 500);
+  });
+
+  input.addEventListener("keydown", e => { if (e.key === "Escape") clearSearch(); });
+}
+
+async function doSearch(query) {
+  const tracks = await fetchTracks({ namesearch: query, orderby: "popularity_total" });
+  window._searchSongs = tracks;
+
+  const el = document.getElementById("searchResults");
+  if (!tracks.length) {
+    el.innerHTML = `
+      <div class="search-empty">
+        <div style="font-size:2.5rem;margin-bottom:12px">🔍</div>
+        <p>No results for "<strong>${query}</strong>"</p>
+        <span>Try a different search term</span>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="search-tag">${tracks.length} RESULTS FROM JAMENDO</div>
+    <div class="song-table-header">
+      <span>#</span><span>TITLE</span><span>ARTIST</span>
+      <span><i class="fas fa-clock"></i></span><span></span>
+    </div>` +
+    tracks.map((song, i) => {
+      const dur   = fmtSec(song.duration);
+      const liked = isLiked(song.id);
+      return `
+      <div class="song-row" onclick="songs=window._searchSongs; playSongObj(${i}, 'searchResults')">
+        <div class="song-num-wrap">
+          <span class="row-num">${i + 1}</span>
+          <div class="row-play-icon"><i class="fas fa-play"></i></div>
+        </div>
+        <div class="song-title-cell">
+          <div class="song-cover-wrap">
+            ${song.album_image
+              ? `<img src="${song.album_image}" class="song-cover-img"/>`
+              : `<div class="song-cover-fallback">🎵</div>`}
+          </div>
+          <div>
+            <div class="song-name">${song.name}</div>
+            <div class="song-album">${song.album_name || ""}</div>
+          </div>
+        </div>
+        <div class="song-artist-cell">${song.artist_name}</div>
+        <div class="song-dur">${dur}</div>
         <button class="song-like-btn ${liked ? "liked" : ""}"
-                onclick="event.stopPropagation(); curPlaylist=${pIdx}; toggleSongLike(${sIdx})">
+                onclick="event.stopPropagation(); songs=window._searchSongs; toggleSongLike('${song.id}', ${i})">
           <i class="${liked ? "fas" : "far"} fa-heart"></i>
         </button>
       </div>`;
     }).join("");
 }
 
-function highlightMatch(text, query) {
-  const re = new RegExp(`(${query})`, "gi");
-  return text.replace(re, `<mark style="background:rgba(185,79,255,0.35);color:white;border-radius:3px;padding:0 2px">$1</mark>`);
+function clearSearch() {
+  document.getElementById("searchInput").value = "";
+  document.getElementById("searchClear").classList.remove("visible");
+  window._searchSongs = [];
+  showSection("home");
 }
 
-// ── SIDEBAR PLAYLIST CLICKS ───────────────
-function bindSidebarPlaylists() {
-  document.querySelectorAll(".playlist-item").forEach((el) => {
-    el.addEventListener("click", () => loadPlaylist(parseInt(el.dataset.playlist)));
+// ── GENRE CARDS ───────────────────────────
+function renderGenreCards() {
+  const el = document.getElementById("genreCards");
+  el.innerHTML = genres.map(g => `
+    <div class="pl-card" onclick="loadGenre('${g.id}', null)">
+      <div class="pl-card-art" style="background:${g.color}22;font-size:3rem">${g.emoji}</div>
+      <div class="pl-card-name">${g.label}</div>
+      <div class="pl-card-count">Powered by Jamendo</div>
+    </div>`
+  ).join("");
+}
+
+// ── SECTION SWITCH ────────────────────────
+function showSection(name) {
+  currentSection = name;
+  ["home", "search", "library"].forEach(s => {
+    document.getElementById(`section-${s}`).style.display = s === name ? "block" : "none";
   });
+  ["nav-home", "nav-search", "nav-library"].forEach((id, i) => {
+    document.getElementById(id).classList.toggle("active", ["home","search","library"][i] === name);
+  });
+  if (name === "library") { renderLibrary(); updateLikedCount(); }
+}
+
+// ── UTILS ─────────────────────────────────
+function showLoading() {
+  document.getElementById("songList").innerHTML = `
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading from Jamendo...</p>
+    </div>`;
+}
+
+function fmt(s) {
+  if (isNaN(s)) return "0:00";
+  return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+}
+function fmtSec(s) {
+  if (!s) return "—";
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+let toastTimer;
+function showToast(msg) {
+  let t = document.getElementById("toast");
+  if (!t) {
+    t = document.createElement("div");
+    t.id = "toast";
+    t.style.cssText = `
+      position:fixed; bottom:110px; left:50%; transform:translateX(-50%);
+      background:#1c1c35; border:1px solid rgba(185,79,255,0.3);
+      color:#f0eeff; padding:10px 20px; border-radius:50px;
+      font-size:0.85rem; z-index:999; transition:opacity 0.3s;
+      font-family:'Plus Jakarta Sans',sans-serif;`;
+    document.body.appendChild(t);
+  }
+  t.textContent = msg; t.style.opacity = "1";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.style.opacity = "0"; }, 2500);
 }
 
 // ── START ─────────────────────────────────
