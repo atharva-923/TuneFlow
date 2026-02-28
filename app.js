@@ -46,7 +46,7 @@ async function fetchTracks(params) {
   url.searchParams.set("client_id", JAMENDO_ID);
   url.searchParams.set("format", "json");
   url.searchParams.set("limit", "20");
-  url.searchParams.set("audioformat", "mp31");
+  url.searchParams.set("audioformat", "mp32");
   url.searchParams.set("imagesize", "200");
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
