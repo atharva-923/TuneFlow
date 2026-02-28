@@ -151,7 +151,7 @@ function playSongObj(idx, containerId = "songList") {
   }
 
   curIdx = idx;
-  audio.src = song.audio;
+  audio.src = song.audio.replace(/^http:///, "https://");
   audio.play().catch(() => showToast("Click play to start"));
   playing = true;
 
