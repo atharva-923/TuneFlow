@@ -16,6 +16,26 @@
   <div class="blob blob-3"></div>
 </div>
 
+<!-- SIDE PANELS (Queue + Recently Played) -->
+<div class="side-panel" id="panel-queue">
+  <div class="panel-header">
+    <h3>🎵 Up Next <span id="queueCount" class="panel-badge"></span></h3>
+    <div style="display:flex;gap:8px">
+      <button onclick="clearQueue()" class="panel-action-btn">Clear</button>
+      <button onclick="togglePanel('queue')" class="panel-close"><i class="fas fa-times"></i></button>
+    </div>
+  </div>
+  <div id="queueList" class="panel-body"></div>
+</div>
+
+<div class="side-panel" id="panel-recent">
+  <div class="panel-header">
+    <h3>🕐 Recently Played</h3>
+    <button onclick="togglePanel('recent')" class="panel-close"><i class="fas fa-times"></i></button>
+  </div>
+  <div id="recentList" class="panel-body"></div>
+</div>
+
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="logo">
@@ -43,6 +63,9 @@
     </a>
     <a href="#" class="nav-item" id="nav-library" onclick="showSection('library'); return false;">
       <i class="fas fa-heart"></i><span>Liked Songs</span>
+    </a>
+    <a href="#" class="nav-item" id="nav-mymusic" onclick="showSection('mymusic'); return false;">
+      <i class="fas fa-upload"></i><span>My Music</span>
     </a>
   </nav>
 
@@ -73,9 +96,7 @@
   </div>
 
   <div class="sidebar-now-playing" id="sidebarNowPlaying">
-    <div class="snp-cover" id="snpCover">
-      <i class="fas fa-music"></i>
-    </div>
+    <div class="snp-cover" id="snpCover"><i class="fas fa-music"></i></div>
     <div class="snp-info">
       <p class="snp-title" id="snpTitle">Nothing playing</p>
       <p class="snp-artist" id="snpArtist">—</p>
@@ -87,20 +108,32 @@
 <main class="main">
   <header class="topbar">
     <div class="topbar-nav">
+      <button class="icon-btn" id="mobileMenuBtn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')">
+        <i class="fas fa-bars"></i>
+      </button>
       <button class="icon-btn"><i class="fas fa-chevron-left"></i></button>
       <button class="icon-btn"><i class="fas fa-chevron-right"></i></button>
     </div>
     <div class="search-wrap">
       <i class="fas fa-search"></i>
       <input type="text" id="searchInput" placeholder="Search real songs, artists..."/>
-      <button class="search-clear" id="searchClear" onclick="clearSearch()">
-        <i class="fas fa-times"></i>
-      </button>
+      <button class="search-clear" id="searchClear" onclick="clearSearch()"><i class="fas fa-times"></i></button>
     </div>
     <div class="topbar-right">
-      <button class="profile-btn"><i class="fas fa-user"></i> atharva-923</button>
+      <button class="icon-btn topbar-panel-btn" onclick="togglePanel('recent')" title="Recently Played">
+        <i class="fas fa-clock"></i>
+      </button>
+      <button class="icon-btn topbar-panel-btn" onclick="togglePanel('queue')" title="Queue">
+        <i class="fas fa-list"></i>
+      </button>
+      <button class="profile-btn"><i class="fas fa-user"></i> <span class="profile-name">atharva-923</span></button>
     </div>
   </header>
+
+  <!-- VISUALIZER -->
+  <div class="visualizer-wrap">
+    <canvas id="visualizer-canvas" width="800" height="60"></canvas>
+  </div>
 
   <!-- HOME -->
   <div id="section-home">
@@ -111,12 +144,8 @@
         <h1 class="banner-title" id="bannerTitle">Lo-fi Beats</h1>
         <p class="banner-meta" id="bannerMeta">Real songs from Jamendo • Free & Legal</p>
         <div class="banner-actions">
-          <button class="btn-primary" onclick="playAll()">
-            <i class="fas fa-play"></i> Play All
-          </button>
-          <button class="btn-ghost" onclick="toggleShuffle(); playAll()">
-            <i class="fas fa-shuffle"></i> Shuffle
-          </button>
+          <button class="btn-primary" onclick="playAll()"><i class="fas fa-play"></i> Play All</button>
+          <button class="btn-ghost" onclick="toggleShuffle(); playAll()"><i class="fas fa-shuffle"></i> Shuffle</button>
         </div>
       </div>
       <div class="banner-visual">
@@ -140,12 +169,7 @@
         <span>#</span><span>TITLE</span><span>ARTIST</span>
         <span><i class="fas fa-clock"></i></span><span></span>
       </div>
-      <div id="songList">
-        <div class="loading-state">
-          <div class="spinner"></div>
-          <p>Loading real songs...</p>
-        </div>
-      </div>
+      <div id="songList"><div class="loading-state"><div class="spinner"></div><p>Loading real songs...</p></div></div>
     </section>
 
     <section class="content-section">
@@ -159,10 +183,7 @@
     <div class="content-section">
       <h2 class="section-title">Search Results</h2>
       <div id="searchResults">
-        <div class="search-empty">
-          <div style="font-size:2.5rem;margin-bottom:12px">🎵</div>
-          <p>Type something to search real songs</p>
-        </div>
+        <div class="search-empty"><div style="font-size:2.5rem;margin-bottom:12px">🎵</div><p>Type something to search</p></div>
       </div>
     </div>
   </div>
@@ -175,10 +196,25 @@
         <p class="library-sub" id="likedCount">0 songs liked</p>
       </div>
       <div id="likedList">
-        <div class="empty-library">
-          <div class="empty-icon">🎵</div>
-          <p>No liked songs yet</p>
-          <span>Hit the ♥ on any song to save it here</span>
+        <div class="empty-library"><div class="empty-icon">🎵</div><p>No liked songs yet</p><span>Hit the ♥ on any song</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MY MUSIC -->
+  <div id="section-mymusic" style="display:none">
+    <div class="content-section">
+      <div class="library-header">
+        <h2 class="section-title">🎵 My Music</h2>
+        <p class="library-sub">Your uploaded songs</p>
+      </div>
+      <input type="file" id="musicUpload" accept="audio/*" multiple style="display:none"/>
+      <div id="myMusicList">
+        <div class="upload-prompt">
+          <label for="musicUpload" class="upload-btn">
+            <i class="fas fa-cloud-arrow-up"></i> Upload Your Music
+          </label>
+          <p>Supports MP3, WAV, OGG<br/>Name files as <strong>"Artist - Title.mp3"</strong> for best results</p>
         </div>
       </div>
     </div>
@@ -189,7 +225,7 @@
 <footer class="player">
   <div class="player-left">
     <div class="now-playing-art" id="nowPlayingArt">
-      <img id="nowPlayingImg" src="" alt="" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:10px;"/>
+      <img id="nowPlayingImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:10px;"/>
       <span id="nowPlayingIcon"><i class="fas fa-music"></i></span>
       <div class="art-glow" id="artGlow"></div>
     </div>
@@ -197,9 +233,7 @@
       <p class="np-title" id="npTitle">Select a song</p>
       <p class="np-artist" id="npArtist">—</p>
     </div>
-    <button class="like-btn" id="likeBtn" onclick="toggleLike()">
-      <i class="far fa-heart"></i>
-    </button>
+    <button class="like-btn" id="likeBtn" onclick="toggleLike()"><i class="far fa-heart"></i></button>
   </div>
 
   <div class="player-center">
@@ -221,12 +255,16 @@
   </div>
 
   <div class="player-right">
+    <button class="ctrl" onclick="togglePanel('queue')" title="Queue"><i class="fas fa-list"></i></button>
     <button class="ctrl" onclick="toggleMute()" id="muteBtn"><i class="fas fa-volume-high"></i></button>
     <div class="vol-track" onclick="setVol(event)">
       <div class="vol-fill" id="volFill" style="width:80%"></div>
     </div>
   </div>
 </footer>
+
+<!-- Mobile overlay -->
+<div class="sidebar-overlay" onclick="document.querySelector('.sidebar').classList.remove('mobile-open')"></div>
 
 <audio id="audio"></audio>
 <script src="app.js"></script>
