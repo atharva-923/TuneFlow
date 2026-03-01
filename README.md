@@ -73,12 +73,6 @@ tuneflow/
 
 ---
 
-## 📸 Screenshots
-
-> *(Add screenshots of your app here)*
-
----
-
 ## 🔮 Future Plans
 
 - [ ] Backend integration (Node.js + Express)
