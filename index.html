@@ -75,22 +75,22 @@
     <p class="sidebar-label">GENRES</p>
     <ul class="playlist-list">
       <li class="playlist-item active" onclick="loadGenre('lofi', this)">
-        <span class="pl-dot" style="background:#b94fff"></span> Lo-fi
+        <span class="pl-dot" style="background:#e8a830"></span> Lo-fi
       </li>
       <li class="playlist-item" onclick="loadGenre('pop', this)">
-        <span class="pl-dot" style="background:#00d4ff"></span> Pop
+        <span class="pl-dot" style="background:#d4a050"></span> Pop
       </li>
       <li class="playlist-item" onclick="loadGenre('rock', this)">
-        <span class="pl-dot" style="background:#ff6b6b"></span> Rock
+        <span class="pl-dot" style="background:#c4601a"></span> Rock
       </li>
       <li class="playlist-item" onclick="loadGenre('hiphop', this)">
-        <span class="pl-dot" style="background:#f59e0b"></span> Hip-Hop
+        <span class="pl-dot" style="background:#d4803a"></span> Hip-Hop
       </li>
       <li class="playlist-item" onclick="loadGenre('electronic', this)">
-        <span class="pl-dot" style="background:#43e97b"></span> Electronic
+        <span class="pl-dot" style="background:#b8c860"></span> Electronic
       </li>
       <li class="playlist-item" onclick="loadGenre('jazz', this)">
-        <span class="pl-dot" style="background:#ec4899"></span> Jazz
+        <span class="pl-dot" style="background:#c87840"></span> Jazz
       </li>
     </ul>
   </div>
@@ -108,7 +108,7 @@
 <main class="main">
   <header class="topbar">
     <div class="topbar-nav">
-      <button class="icon-btn" id="mobileMenuBtn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')">
+      <button class="icon-btn" id="mobileMenuBtn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')" style="display:none">
         <i class="fas fa-bars"></i>
       </button>
       <button class="icon-btn"><i class="fas fa-chevron-left"></i></button>
@@ -129,11 +129,6 @@
       <button class="profile-btn"><i class="fas fa-user"></i> <span class="profile-name">atharva-923</span></button>
     </div>
   </header>
-
-  <!-- VISUALIZER -->
-  <div class="visualizer-wrap">
-    <canvas id="visualizer-canvas" width="800" height="60"></canvas>
-  </div>
 
   <!-- HOME -->
   <div id="section-home">

@@ -275,20 +275,32 @@ body {
 .banner {
   margin: 20px 24px 0;
   border-radius: var(--radius-lg);
-  min-height: 210px;
+  min-height: 230px;
   display: flex; align-items: center;
   justify-content: space-between;
-  padding: 40px 44px;
+  padding: 44px 48px;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #1c1506 0%, #2a1e08 40%, #160d04 100%);
-  border: 1px solid var(--border);
+  background: linear-gradient(135deg, #1e1505 0%, #2e2008 50%, #140c03 100%);
+  border: 1px solid rgba(232,168,48,0.2);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(232,168,48,0.1);
 }
+/* Warm layered glow */
 .banner-glow {
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse at 15% 60%, rgba(232, 168, 48, 0.18) 0%, transparent 55%),
-              radial-gradient(ellipse at 85% 40%, rgba(196, 96, 26, 0.1) 0%, transparent 50%);
-  pointer-events: none;
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 65% 100% at 5% 50%, rgba(232,168,48,0.25) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 80% at 92% 25%, rgba(196,96,26,0.18) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 50% at 50% 110%, rgba(100,60,10,0.15) 0%, transparent 55%);
+}
+/* Subtle scan-line texture for warmth */
+.banner::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 3px,
+    rgba(232,168,48,0.012) 3px, rgba(232,168,48,0.012) 4px
+  );
 }
 
 /* Decorative record grooves on banner */
@@ -356,36 +368,38 @@ body {
 /* Vinyl */
 .banner-visual { position: relative; z-index: 2; }
 .vinyl {
-  width: 148px; height: 148px; border-radius: 50%;
+  width: 164px; height: 164px; border-radius: 50%;
   background:
     repeating-conic-gradient(from 0deg,
       #0e0b06 0deg 2deg,
       #181409 2deg 4deg,
       #111008 4deg 6deg,
-      #1a1610 6deg 8deg
+      #1d1810 6deg 8deg
     );
   display: flex; align-items: center; justify-content: center;
   box-shadow:
-    0 0 0 1px rgba(232,168,48,0.08),
-    0 0 0 2px rgba(0,0,0,0.6),
-    0 24px 60px rgba(0,0,0,0.7),
-    0 0 40px rgba(232,168,48,0.12);
+    0 0 0 1px rgba(232,168,48,0.12),
+    0 0 0 3px rgba(0,0,0,0.8),
+    0 0 0 4px rgba(232,168,48,0.06),
+    0 28px 70px rgba(0,0,0,0.8),
+    0 0 60px rgba(232,168,48,0.2);
   animation: spin 14s linear infinite paused;
   position: relative;
 }
 .vinyl.playing { animation-play-state: running; }
 .vinyl-label {
-  width: 48px; height: 48px; border-radius: 50%;
-  background: radial-gradient(circle, #2c2010 0%, #1a1208 100%);
+  width: 54px; height: 54px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #342813 0%, #1a1208 100%);
   display: flex; align-items: center; justify-content: center;
-  border: 1px solid rgba(232,168,48,0.2);
+  border: 1px solid rgba(232,168,48,0.25);
+  box-shadow: 0 0 16px rgba(232,168,48,0.15);
   position: relative; z-index: 1;
 }
 .vinyl-shadow {
-  width: 148px; height: 18px;
-  background: radial-gradient(ellipse, rgba(232,168,48,0.3) 0%, transparent 70%);
-  margin-top: 8px;
-  filter: blur(10px);
+  width: 164px; height: 20px;
+  background: radial-gradient(ellipse, rgba(232,168,48,0.35) 0%, transparent 70%);
+  margin-top: 10px;
+  filter: blur(12px);
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 

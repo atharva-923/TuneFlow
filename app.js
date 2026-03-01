@@ -32,12 +32,12 @@ audio.volume = 0.8;
 
 // ── GENRE CONFIG ──────────────────────────
 const genres = [
-  { id: "lofi",       label: "Lo-fi",      emoji: "🌙", color: "#b94fff", tags: "lofi" },
-  { id: "pop",        label: "Pop",         emoji: "🎤", color: "#00d4ff", tags: "pop" },
-  { id: "rock",       label: "Rock",        emoji: "🎸", color: "#ff6b6b", tags: "rock" },
-  { id: "hiphop",     label: "Hip-Hop",     emoji: "🎧", color: "#f59e0b", tags: "hiphop" },
-  { id: "electronic", label: "Electronic",  emoji: "⚡", color: "#43e97b", tags: "electronic" },
-  { id: "jazz",       label: "Jazz",        emoji: "🎷", color: "#ec4899", tags: "jazz" },
+  { id: "lofi",       label: "Lo-fi",      emoji: "🌙", color: "#e8a830", tags: "lofi" },
+  { id: "pop",        label: "Pop",         emoji: "🎤", color: "#d4a050", tags: "pop" },
+  { id: "rock",       label: "Rock",        emoji: "🎸", color: "#c4601a", tags: "rock" },
+  { id: "hiphop",     label: "Hip-Hop",     emoji: "🎧", color: "#d4803a", tags: "hiphop" },
+  { id: "electronic", label: "Electronic",  emoji: "⚡", color: "#b8c860", tags: "electronic" },
+  { id: "jazz",       label: "Jazz",        emoji: "🎷", color: "#c87840", tags: "jazz" },
 ];
 
 // ── BOOT ──────────────────────────────────
@@ -129,7 +129,6 @@ function setDynamicTheme(color) {
     .spinner { border-top-color: ${color} !important; }
     .search-wrap:focus-within { border-color: ${color} !important; box-shadow: 0 0 0 3px ${color}30 !important; }
     .vinyl-label { border-color: ${color}33 !important; }
-    #visualizer-canvas { border-color: ${color}18 !important; }
     .ctrl.active { color: ${color} !important; }
   `;
 }
