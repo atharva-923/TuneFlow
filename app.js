@@ -32,12 +32,12 @@ audio.volume = 0.8;
 
 // ── GENRE CONFIG ──────────────────────────
 const genres = [
-  { id: "lofi",       label: "Lo-fi",      emoji: "🌙", color: "#b94fff", tags: "lofi" },
-  { id: "pop",        label: "Pop",         emoji: "🎤", color: "#00d4ff", tags: "pop" },
-  { id: "rock",       label: "Rock",        emoji: "🎸", color: "#ff6b6b", tags: "rock" },
-  { id: "hiphop",     label: "Hip-Hop",     emoji: "🎧", color: "#f59e0b", tags: "hiphop" },
-  { id: "electronic", label: "Electronic",  emoji: "⚡", color: "#43e97b", tags: "electronic" },
-  { id: "jazz",       label: "Jazz",        emoji: "🎷", color: "#ec4899", tags: "jazz" },
+  { id: "lofi",       label: "Lo-fi",      emoji: "🌙", color: "#7fb88a", tags: "lofi" },
+  { id: "pop",        label: "Pop",         emoji: "🎤", color: "#7fb88a", tags: "pop" },
+  { id: "rock",       label: "Rock",        emoji: "🎸", color: "#7fb88a", tags: "rock" },
+  { id: "hiphop",     label: "Hip-Hop",     emoji: "🎧", color: "#7fb88a", tags: "hiphop" },
+  { id: "electronic", label: "Electronic",  emoji: "⚡", color: "#7fb88a", tags: "electronic" },
+  { id: "jazz",       label: "Jazz",        emoji: "🎷", color: "#7fb88a", tags: "jazz" },
 ];
 
 // ── BOOT ──────────────────────────────────
@@ -90,48 +90,9 @@ async function loadGenre(genreId, el) {
   document.getElementById("songCount").textContent = `${songs.length} songs`;
 }
 
-// ── DYNAMIC COLOR THEME ───────────────────
+// ── THEME — single consistent calm accent, CSS handles everything
 function setDynamicTheme(color) {
-  document.getElementById("banner").style.background =
-    `linear-gradient(135deg, #1c1506 0%, ${color}22 50%, #160d04 100%)`;
-  document.documentElement.style.setProperty("--amber", color);
-
-  // Update glow effects
-  const style = document.getElementById("dynamic-style") || (() => {
-    const s = document.createElement("style");
-    s.id = "dynamic-style";
-    document.head.appendChild(s);
-    return s;
-  })();
-
-  style.textContent = `
-    .play-pause { background: ${color} !important; box-shadow: 0 4px 20px ${color}66 !important; color: #111009 !important; }
-    .play-pause:hover { background: ${color}ee !important; box-shadow: 0 6px 28px ${color}88 !important; }
-    .prog-fill { background: linear-gradient(90deg, ${color}, ${color}bb) !important; }
-    .vol-fill  { background: linear-gradient(90deg, ${color}, ${color}bb) !important; }
-    .nav-item.active { background: ${color}18 !important; color: ${color} !important; }
-    .nav-item.active::before { background: ${color} !important; }
-    .song-row.playing { background: ${color}0e !important; border-color: ${color}2a !important; }
-    .song-row.playing .song-name { color: ${color} !important; }
-    .logo-text { background: linear-gradient(90deg, ${color}, ${color}bb) !important; -webkit-background-clip: text !important; }
-    .player::before { background: linear-gradient(90deg, transparent, ${color}, transparent) !important; }
-    .btn-primary { background: ${color} !important; box-shadow: 0 4px 20px ${color}55 !important; color: #111009 !important; }
-    .upload-btn { background: ${color} !important; color: #111009 !important; }
-    .upload-btn-small { background: ${color} !important; color: #111009 !important; }
-    .prog-dot { background: ${color} !important; box-shadow: 0 0 8px ${color}cc !important; }
-    .row-wave span { background: ${color} !important; }
-    .row-play-icon { color: ${color} !important; }
-    .like-btn.liked { color: ${color} !important; }
-    .song-like-btn.liked { color: ${color} !important; }
-    .song-like-btn:hover { color: ${color} !important; }
-    .panel-badge { background: ${color} !important; }
-    .search-tag { color: ${color} !important; border-color: ${color}30 !important; background: ${color}0e !important; }
-    .spinner { border-top-color: ${color} !important; }
-    .search-wrap:focus-within { border-color: ${color} !important; box-shadow: 0 0 0 3px ${color}30 !important; }
-    .vinyl-label { border-color: ${color}33 !important; }
-    #visualizer-canvas { border-color: ${color}18 !important; }
-    .ctrl.active { color: ${color} !important; }
-  `;
+  // No dynamic color chaos — CSS accent is always sage green
 }
 
 // ── RENDER SONGS ──────────────────────────
@@ -850,15 +811,206 @@ function showToast(msg) {
   if (!t) {
     t = document.createElement("div"); t.id = "toast";
     t.style.cssText = `position:fixed;bottom:110px;left:50%;transform:translateX(-50%);
-      background:#1c1c35;border:1px solid rgba(185,79,255,0.3);color:#f0eeff;
-      padding:10px 22px;border-radius:50px;font-size:0.85rem;z-index:9999;
-      transition:opacity 0.3s;font-family:'Plus Jakarta Sans',sans-serif;
-      white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,0.4);`;
+      background:#1a1a1a;border:1px solid rgba(255,255,255,0.08);color:#e8e8e8;
+      padding:10px 22px;border-radius:50px;font-size:0.82rem;z-index:9999;
+      transition:opacity 0.3s;font-family:'Inter',sans-serif;letter-spacing:-0.2px;
+      white-space:nowrap;box-shadow:0 8px 28px rgba(0,0,0,0.5);`;
     document.body.appendChild(t);
   }
   t.textContent = msg; t.style.opacity = "1";
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { t.style.opacity = "0"; }, 2500);
+}
+
+
+// ── ⌨️ KEYBOARD SHORTCUTS ─────────────────
+function setupKeyboard() {
+  document.addEventListener("keydown", e => {
+    // Don't fire if user is typing in search
+    if (e.target.tagName === "INPUT") return;
+
+    switch(e.code) {
+      case "Space":
+        e.preventDefault();
+        togglePlay();
+        break;
+      case "ArrowRight":
+        if (e.shiftKey) { nextSong(); showToast("⏭ Next song"); }
+        else { audio.currentTime = Math.min(audio.duration, audio.currentTime + 10); showToast("⏩ +10s"); }
+        break;
+      case "ArrowLeft":
+        if (e.shiftKey) { prevSong(); showToast("⏮ Previous song"); }
+        else { audio.currentTime = Math.max(0, audio.currentTime - 10); showToast("⏪ -10s"); }
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        audio.volume = Math.min(1, audio.volume + 0.1);
+        lastVol = audio.volume;
+        document.getElementById("volFill").style.width = (audio.volume * 100) + "%";
+        showToast(`🔊 Volume ${Math.round(audio.volume * 100)}%`);
+        break;
+      case "ArrowDown":
+        e.preventDefault();
+        audio.volume = Math.max(0, audio.volume - 0.1);
+        lastVol = audio.volume;
+        document.getElementById("volFill").style.width = (audio.volume * 100) + "%";
+        showToast(`🔉 Volume ${Math.round(audio.volume * 100)}%`);
+        break;
+      case "KeyM":
+        toggleMute();
+        break;
+      case "KeyL":
+        toggleLike();
+        break;
+      case "KeyS":
+        toggleShuffle();
+        break;
+      case "KeyR":
+        toggleRepeat();
+        break;
+    }
+  });
+}
+
+// ── 😴 SLEEP TIMER ────────────────────────
+let sleepTimer = null;
+let sleepMins  = 0;
+let sleepInterval = null;
+
+function toggleSleepTimer() {
+  if (sleepTimer) {
+    clearTimeout(sleepTimer);
+    clearInterval(sleepInterval);
+    sleepTimer = null; sleepMins = 0;
+    updateSleepBtn();
+    showToast("😴 Sleep timer cancelled");
+    return;
+  }
+  // Cycle: 15 → 30 → 45 → 60 → off
+  const options = [15, 30, 45, 60];
+  sleepMins = options[(options.indexOf(sleepMins) + 1) % options.length] || 15;
+  // Actually set it
+  clearTimeout(sleepTimer);
+  clearInterval(sleepInterval);
+  let remaining = sleepMins * 60;
+  sleepTimer = setTimeout(() => {
+    audio.pause(); playing = false;
+    document.getElementById("playPauseBtn").innerHTML = `<i class="fas fa-play"></i>`;
+    document.getElementById("vinyl").classList.remove("playing");
+    sleepTimer = null;
+    updateSleepBtn();
+    showToast("😴 Sleep timer — music stopped");
+  }, sleepMins * 60 * 1000);
+  // Countdown in button
+  sleepInterval = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) { clearInterval(sleepInterval); return; }
+    updateSleepBtn(remaining);
+  }, 1000);
+  updateSleepBtn(remaining);
+  showToast(`😴 Sleep timer: ${sleepMins} min`);
+}
+
+function cycleSleepTimer() {
+  // If active, cancel first
+  if (sleepTimer) {
+    clearTimeout(sleepTimer);
+    clearInterval(sleepInterval);
+    sleepTimer = null; sleepMins = 0;
+  }
+  const options = [15, 30, 45, 60];
+  const next = options[(options.indexOf(sleepMins) + 1) % options.length];
+  if (!next || sleepMins === 60) {
+    sleepMins = 0;
+    updateSleepBtn();
+    showToast("😴 Sleep timer off");
+    return;
+  }
+  sleepMins = next;
+  let remaining = sleepMins * 60;
+  sleepTimer = setTimeout(() => {
+    audio.pause(); playing = false;
+    document.getElementById("playPauseBtn").innerHTML = `<i class="fas fa-play"></i>`;
+    document.getElementById("vinyl").classList.remove("playing");
+    sleepTimer = null; sleepMins = 0;
+    updateSleepBtn();
+    showToast("😴 Sleep timer — music stopped. Goodnight 🌙");
+  }, sleepMins * 60 * 1000);
+  sleepInterval = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) { clearInterval(sleepInterval); return; }
+    updateSleepBtn(remaining);
+  }, 1000);
+  updateSleepBtn(remaining);
+  showToast(`😴 Stopping in ${sleepMins} min`);
+}
+
+function updateSleepBtn(remaining) {
+  const btn = document.getElementById("sleepBtn");
+  if (!btn) return;
+  if (!sleepTimer) {
+    btn.innerHTML = `<i class="fas fa-moon"></i>`;
+    btn.classList.remove("active");
+    btn.title = "Sleep Timer";
+  } else {
+    const m = Math.floor(remaining / 60);
+    const s = String(remaining % 60).padStart(2,"0");
+    btn.innerHTML = `<span class="sleep-countdown">${m}:${s}</span>`;
+    btn.classList.add("active");
+    btn.title = "Click to cancel";
+  }
+}
+
+// ── 🎚️ CROSSFADE ──────────────────────────
+let crossfadeSecs = 3; // default 3s
+let crossfadeActive = false;
+let crossfadeTimer  = null;
+
+function setupCrossfade() {
+  audio.addEventListener("timeupdate", () => {
+    if (!audio.duration || crossfadeSecs === 0) return;
+    const timeLeft = audio.duration - audio.currentTime;
+    if (timeLeft <= crossfadeSecs && timeLeft > 0 && !crossfadeActive && playing) {
+      crossfadeActive = true;
+      startCrossfade();
+    }
+    if (timeLeft > crossfadeSecs + 1) crossfadeActive = false;
+  });
+}
+
+function startCrossfade() {
+  if (crossfadeSecs === 0) return;
+  const totalSteps = crossfadeSecs * 10; // 100ms intervals
+  let step = 0;
+  const originalVol = audio.volume;
+  const fadeOut = setInterval(() => {
+    step++;
+    audio.volume = Math.max(0, originalVol * (1 - step / totalSteps));
+    if (step >= totalSteps) {
+      clearInterval(fadeOut);
+      audio.volume = originalVol;
+      crossfadeActive = false;
+    }
+  }, 100);
+}
+
+function setCrossfade(secs) {
+  crossfadeSecs = secs;
+  document.querySelectorAll(".cf-option").forEach(el => {
+    el.classList.toggle("active", parseInt(el.dataset.secs) === secs);
+  });
+  showToast(secs === 0 ? "Crossfade off" : `🎚️ Crossfade: ${secs}s`);
+  localStorage.setItem("tf_crossfade", secs);
+}
+
+function toggleCrossfadeMenu() {
+  const menu = document.getElementById("crossfadeMenu");
+  if (!menu) return;
+  menu.classList.toggle("open");
+}
+
+function showKeyboardHelp() {
+  document.getElementById("kbModal").classList.add("open");
 }
 
 // ── START ─────────────────────────────────

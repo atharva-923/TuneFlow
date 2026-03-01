@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TuneFlow</title>
   <link rel="stylesheet" href="style.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
 <body>
@@ -45,8 +45,8 @@
         <path d="M9 10 L9 18 M13 7 L13 21 M17 11 L17 17 M21 9 L21 19" stroke="url(#lg)" stroke-width="2" stroke-linecap="round"/>
         <defs>
           <linearGradient id="lg" x1="0" y1="0" x2="28" y2="28">
-            <stop offset="0%" stop-color="#b94fff"/>
-            <stop offset="100%" stop-color="#00d4ff"/>
+            <stop offset="0%" stop-color="#7fb88a"/>
+            <stop offset="100%" stop-color="#a8d4b0"/>
           </linearGradient>
         </defs>
       </svg>
@@ -75,22 +75,22 @@
     <p class="sidebar-label">GENRES</p>
     <ul class="playlist-list">
       <li class="playlist-item active" onclick="loadGenre('lofi', this)">
-        <span class="pl-dot" style="background:#b94fff"></span> Lo-fi
+        <span class="pl-dot" style="background:#7fb88a"></span> Lo-fi
       </li>
       <li class="playlist-item" onclick="loadGenre('pop', this)">
-        <span class="pl-dot" style="background:#00d4ff"></span> Pop
+        <span class="pl-dot" style="background:#888"></span> Pop
       </li>
       <li class="playlist-item" onclick="loadGenre('rock', this)">
-        <span class="pl-dot" style="background:#ff6b6b"></span> Rock
+        <span class="pl-dot" style="background:#888"></span> Rock
       </li>
       <li class="playlist-item" onclick="loadGenre('hiphop', this)">
-        <span class="pl-dot" style="background:#f59e0b"></span> Hip-Hop
+        <span class="pl-dot" style="background:#888"></span> Hip-Hop
       </li>
       <li class="playlist-item" onclick="loadGenre('electronic', this)">
-        <span class="pl-dot" style="background:#43e97b"></span> Electronic
+        <span class="pl-dot" style="background:#888"></span> Electronic
       </li>
       <li class="playlist-item" onclick="loadGenre('jazz', this)">
-        <span class="pl-dot" style="background:#ec4899"></span> Jazz
+        <span class="pl-dot" style="background:#888"></span> Jazz
       </li>
     </ul>
   </div>
@@ -108,7 +108,7 @@
 <main class="main">
   <header class="topbar">
     <div class="topbar-nav">
-      <button class="icon-btn" id="mobileMenuBtn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')" style="display:none">
+      <button class="icon-btn" id="mobileMenuBtn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')">
         <i class="fas fa-bars"></i>
       </button>
       <button class="icon-btn"><i class="fas fa-chevron-left"></i></button>
@@ -126,6 +126,7 @@
       <button class="icon-btn topbar-panel-btn" onclick="togglePanel('queue')" title="Queue">
         <i class="fas fa-list"></i>
       </button>
+      <button class="icon-btn" onclick="showKeyboardHelp()" title="Keyboard shortcuts"><i class="fas fa-keyboard"></i></button>
       <button class="profile-btn"><i class="fas fa-user"></i> <span class="profile-name">atharva-923</span></button>
     </div>
   </header>
@@ -147,7 +148,7 @@
         <div class="vinyl" id="vinyl">
           <div class="vinyl-label" id="vinylArt">
             <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-              <path d="M9 10 L9 18 M13 7 L13 21 M17 11 L17 17 M21 9 L21 19" stroke="#b94fff" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M9 10 L9 18 M13 7 L13 21 M17 11 L17 17 M21 9 L21 19" stroke="#7fb88a" stroke-width="2.5" stroke-linecap="round"/>
             </svg>
           </div>
         </div>
@@ -250,6 +251,19 @@
   </div>
 
   <div class="player-right">
+    <button class="ctrl" id="sleepBtn" onclick="cycleSleepTimer()" title="Sleep Timer"><i class="fas fa-moon"></i></button>
+    <div class="crossfade-wrap">
+      <button class="ctrl" id="crossfadeBtn" onclick="toggleCrossfadeMenu()" title="Crossfade"><i class="fas fa-shuffle" style="font-size:0.7rem"></i><span class="cf-label">CF</span></button>
+      <div class="crossfade-menu" id="crossfadeMenu">
+        <p class="cf-title">Crossfade</p>
+        <div class="cf-options">
+          <button class="cf-option" data-secs="0" onclick="setCrossfade(0)">Off</button>
+          <button class="cf-option" data-secs="2" onclick="setCrossfade(2)">2s</button>
+          <button class="cf-option active" data-secs="3" onclick="setCrossfade(3)">3s</button>
+          <button class="cf-option" data-secs="5" onclick="setCrossfade(5)">5s</button>
+        </div>
+      </div>
+    </div>
     <button class="ctrl" onclick="togglePanel('queue')" title="Queue"><i class="fas fa-list"></i></button>
     <button class="ctrl" onclick="toggleMute()" id="muteBtn"><i class="fas fa-volume-high"></i></button>
     <div class="vol-track" onclick="setVol(event)">
@@ -260,6 +274,29 @@
 
 <!-- Mobile overlay -->
 <div class="sidebar-overlay" onclick="document.querySelector('.sidebar').classList.remove('mobile-open')"></div>
+
+<!-- KEYBOARD SHORTCUTS MODAL -->
+<div class="kb-modal" id="kbModal" onclick="this.classList.remove('open')">
+  <div class="kb-panel" onclick="event.stopPropagation()">
+    <div class="kb-header">
+      <h3>Keyboard Shortcuts</h3>
+      <button class="panel-close" onclick="document.getElementById('kbModal').classList.remove('open')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="kb-grid">
+      <div class="kb-row"><kbd>Space</kbd><span>Play / Pause</span></div>
+      <div class="kb-row"><kbd>Shift</kbd><kbd>→</kbd><span>Next song</span></div>
+      <div class="kb-row"><kbd>Shift</kbd><kbd>←</kbd><span>Previous song</span></div>
+      <div class="kb-row"><kbd>→</kbd><span>Forward 10s</span></div>
+      <div class="kb-row"><kbd>←</kbd><span>Rewind 10s</span></div>
+      <div class="kb-row"><kbd>↑</kbd><span>Volume up</span></div>
+      <div class="kb-row"><kbd>↓</kbd><span>Volume down</span></div>
+      <div class="kb-row"><kbd>M</kbd><span>Mute / Unmute</span></div>
+      <div class="kb-row"><kbd>L</kbd><span>Like song</span></div>
+      <div class="kb-row"><kbd>S</kbd><span>Toggle shuffle</span></div>
+      <div class="kb-row"><kbd>R</kbd><span>Toggle repeat</span></div>
+    </div>
+  </div>
+</div>
 
 <audio id="audio"></audio>
 <script src="app.js"></script>
