@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TuneFlow</title>
   <link rel="stylesheet" href="style.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
 <body>
@@ -45,8 +45,8 @@
         <path d="M9 10 L9 18 M13 7 L13 21 M17 11 L17 17 M21 9 L21 19" stroke="url(#lg)" stroke-width="2" stroke-linecap="round"/>
         <defs>
           <linearGradient id="lg" x1="0" y1="0" x2="28" y2="28">
-            <stop offset="0%" stop-color="#7fb88a"/>
-            <stop offset="100%" stop-color="#a8d4b0"/>
+            <stop offset="0%" stop-color="#b94fff"/>
+            <stop offset="100%" stop-color="#00d4ff"/>
           </linearGradient>
         </defs>
       </svg>
@@ -75,22 +75,22 @@
     <p class="sidebar-label">GENRES</p>
     <ul class="playlist-list">
       <li class="playlist-item active" onclick="loadGenre('lofi', this)">
-        <span class="pl-dot" style="background:#7fb88a"></span> Lo-fi
+        <span class="pl-dot" style="background:#b94fff"></span> Lo-fi
       </li>
       <li class="playlist-item" onclick="loadGenre('pop', this)">
-        <span class="pl-dot" style="background:#888"></span> Pop
+        <span class="pl-dot" style="background:#00d4ff"></span> Pop
       </li>
       <li class="playlist-item" onclick="loadGenre('rock', this)">
-        <span class="pl-dot" style="background:#888"></span> Rock
+        <span class="pl-dot" style="background:#ff6b6b"></span> Rock
       </li>
       <li class="playlist-item" onclick="loadGenre('hiphop', this)">
-        <span class="pl-dot" style="background:#888"></span> Hip-Hop
+        <span class="pl-dot" style="background:#f59e0b"></span> Hip-Hop
       </li>
       <li class="playlist-item" onclick="loadGenre('electronic', this)">
-        <span class="pl-dot" style="background:#888"></span> Electronic
+        <span class="pl-dot" style="background:#43e97b"></span> Electronic
       </li>
       <li class="playlist-item" onclick="loadGenre('jazz', this)">
-        <span class="pl-dot" style="background:#888"></span> Jazz
+        <span class="pl-dot" style="background:#ec4899"></span> Jazz
       </li>
     </ul>
   </div>
@@ -108,7 +108,7 @@
 <main class="main">
   <header class="topbar">
     <div class="topbar-nav">
-      <button class="icon-btn" id="mobileMenuBtn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')">
+      <button class="icon-btn" id="mobileMenuBtn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')" style="display:none">
         <i class="fas fa-bars"></i>
       </button>
       <button class="icon-btn"><i class="fas fa-chevron-left"></i></button>
@@ -147,7 +147,7 @@
         <div class="vinyl" id="vinyl">
           <div class="vinyl-label" id="vinylArt">
             <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-              <path d="M9 10 L9 18 M13 7 L13 21 M17 11 L17 17 M21 9 L21 19" stroke="#7fb88a" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M9 10 L9 18 M13 7 L13 21 M17 11 L17 17 M21 9 L21 19" stroke="#b94fff" stroke-width="2.5" stroke-linecap="round"/>
             </svg>
           </div>
         </div>
