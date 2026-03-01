@@ -32,12 +32,12 @@ audio.volume = 0.8;
 
 // ── GENRE CONFIG ──────────────────────────
 const genres = [
-  { id: "lofi",       label: "Lo-fi",      emoji: "🌙", color: "#e8a830", tags: "lofi" },
-  { id: "pop",        label: "Pop",         emoji: "🎤", color: "#d4a050", tags: "pop" },
-  { id: "rock",       label: "Rock",        emoji: "🎸", color: "#c4601a", tags: "rock" },
-  { id: "hiphop",     label: "Hip-Hop",     emoji: "🎧", color: "#d4803a", tags: "hiphop" },
-  { id: "electronic", label: "Electronic",  emoji: "⚡", color: "#b8c860", tags: "electronic" },
-  { id: "jazz",       label: "Jazz",        emoji: "🎷", color: "#c87840", tags: "jazz" },
+  { id: "lofi",       label: "Lo-fi",      emoji: "🌙", color: "#7fb88a", tags: "lofi" },
+  { id: "pop",        label: "Pop",         emoji: "🎤", color: "#7fb88a", tags: "pop" },
+  { id: "rock",       label: "Rock",        emoji: "🎸", color: "#7fb88a", tags: "rock" },
+  { id: "hiphop",     label: "Hip-Hop",     emoji: "🎧", color: "#7fb88a", tags: "hiphop" },
+  { id: "electronic", label: "Electronic",  emoji: "⚡", color: "#7fb88a", tags: "electronic" },
+  { id: "jazz",       label: "Jazz",        emoji: "🎷", color: "#7fb88a", tags: "jazz" },
 ];
 
 // ── BOOT ──────────────────────────────────
@@ -90,47 +90,9 @@ async function loadGenre(genreId, el) {
   document.getElementById("songCount").textContent = `${songs.length} songs`;
 }
 
-// ── DYNAMIC COLOR THEME ───────────────────
+// ── THEME — single consistent calm accent, CSS handles everything
 function setDynamicTheme(color) {
-  document.getElementById("banner").style.background =
-    `linear-gradient(135deg, #1c1506 0%, ${color}22 50%, #160d04 100%)`;
-  document.documentElement.style.setProperty("--amber", color);
-
-  // Update glow effects
-  const style = document.getElementById("dynamic-style") || (() => {
-    const s = document.createElement("style");
-    s.id = "dynamic-style";
-    document.head.appendChild(s);
-    return s;
-  })();
-
-  style.textContent = `
-    .play-pause { background: ${color} !important; box-shadow: 0 4px 20px ${color}66 !important; color: #111009 !important; }
-    .play-pause:hover { background: ${color}ee !important; box-shadow: 0 6px 28px ${color}88 !important; }
-    .prog-fill { background: linear-gradient(90deg, ${color}, ${color}bb) !important; }
-    .vol-fill  { background: linear-gradient(90deg, ${color}, ${color}bb) !important; }
-    .nav-item.active { background: ${color}18 !important; color: ${color} !important; }
-    .nav-item.active::before { background: ${color} !important; }
-    .song-row.playing { background: ${color}0e !important; border-color: ${color}2a !important; }
-    .song-row.playing .song-name { color: ${color} !important; }
-    .logo-text { background: linear-gradient(90deg, ${color}, ${color}bb) !important; -webkit-background-clip: text !important; }
-    .player::before { background: linear-gradient(90deg, transparent, ${color}, transparent) !important; }
-    .btn-primary { background: ${color} !important; box-shadow: 0 4px 20px ${color}55 !important; color: #111009 !important; }
-    .upload-btn { background: ${color} !important; color: #111009 !important; }
-    .upload-btn-small { background: ${color} !important; color: #111009 !important; }
-    .prog-dot { background: ${color} !important; box-shadow: 0 0 8px ${color}cc !important; }
-    .row-wave span { background: ${color} !important; }
-    .row-play-icon { color: ${color} !important; }
-    .like-btn.liked { color: ${color} !important; }
-    .song-like-btn.liked { color: ${color} !important; }
-    .song-like-btn:hover { color: ${color} !important; }
-    .panel-badge { background: ${color} !important; }
-    .search-tag { color: ${color} !important; border-color: ${color}30 !important; background: ${color}0e !important; }
-    .spinner { border-top-color: ${color} !important; }
-    .search-wrap:focus-within { border-color: ${color} !important; box-shadow: 0 0 0 3px ${color}30 !important; }
-    .vinyl-label { border-color: ${color}33 !important; }
-    .ctrl.active { color: ${color} !important; }
-  `;
+  // No dynamic color chaos — CSS accent is always sage green
 }
 
 // ── RENDER SONGS ──────────────────────────
