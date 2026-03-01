@@ -313,7 +313,7 @@ function prevSong() {
 }
 
 audio.addEventListener("ended", () => { if (!repeat) nextSong(); });
-audio.addEventListener("play",  () => startVisualizer());
+
 audio.addEventListener("pause", () => stopVisualizer());
 
 function toggleShuffle() {
@@ -481,23 +481,33 @@ function setupVisualizer() {
   if (!canvas) return;
 }
 
+
 function startVisualizer() {
   const canvas = document.getElementById("visualizer-canvas");
-  if (!canvas || vizActive) return;
+  if (!canvas) return;
 
+  // Only init AudioContext once, and only after user interaction
   try {
     if (!audioCtx) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      analyser  = audioCtx.createAnalyser();
-      source    = audioCtx.createMediaElementSource(audio);
+    }
+    if (!analyser) {
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+    }
+    if (!source) {
+      source = audioCtx.createMediaElementSource(audio);
       source.connect(analyser);
-      analyser.connect(audioCtx.destination);
+      analyser.connect(audioCtx.destination); // Must connect to speakers!
     }
     if (audioCtx.state === "suspended") audioCtx.resume();
-    analyser.fftSize = 128;
     vizActive = true;
     drawVisualizer();
-  } catch(e) { console.warn("Visualizer error:", e); }
+  } catch(e) {
+    // Visualizer failed — but audio still works fine, just skip viz
+    console.warn("Visualizer skipped:", e.message);
+    vizActive = false;
+  }
 }
 
 function stopVisualizer() {
