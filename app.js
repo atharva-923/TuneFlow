@@ -93,9 +93,8 @@ async function loadGenre(genreId, el) {
 // ── DYNAMIC COLOR THEME ───────────────────
 function setDynamicTheme(color) {
   document.getElementById("banner").style.background =
-    `linear-gradient(135deg, #0e0820 0%, ${color}33 60%, #080810 100%)`;
-  document.documentElement.style.setProperty("--purple", color);
-  document.documentElement.style.setProperty("--accent", color);
+    `linear-gradient(135deg, #1c1506 0%, ${color}22 50%, #160d04 100%)`;
+  document.documentElement.style.setProperty("--amber", color);
 
   // Update glow effects
   const style = document.getElementById("dynamic-style") || (() => {
@@ -106,19 +105,32 @@ function setDynamicTheme(color) {
   })();
 
   style.textContent = `
-    .play-pause { background: ${color} !important; box-shadow: 0 0 24px ${color}88 !important; }
-    .play-pause:hover { background: ${color}dd !important; box-shadow: 0 0 36px ${color}aa !important; }
-    .prog-fill { background: linear-gradient(90deg, ${color}, #00d4ff) !important; }
-    .vol-fill  { background: linear-gradient(90deg, ${color}, #00d4ff) !important; }
-    .nav-item.active { background: ${color}22 !important; color: ${color} !important; }
-    .song-row.playing { background: ${color}11 !important; border-color: ${color}33 !important; }
+    .play-pause { background: ${color} !important; box-shadow: 0 4px 20px ${color}66 !important; color: #111009 !important; }
+    .play-pause:hover { background: ${color}ee !important; box-shadow: 0 6px 28px ${color}88 !important; }
+    .prog-fill { background: linear-gradient(90deg, ${color}, ${color}bb) !important; }
+    .vol-fill  { background: linear-gradient(90deg, ${color}, ${color}bb) !important; }
+    .nav-item.active { background: ${color}18 !important; color: ${color} !important; }
+    .nav-item.active::before { background: ${color} !important; }
+    .song-row.playing { background: ${color}0e !important; border-color: ${color}2a !important; }
     .song-row.playing .song-name { color: ${color} !important; }
-    .logo-text { background: linear-gradient(90deg, ${color}, #00d4ff) !important; -webkit-background-clip: text !important; }
-    .player::before { background: linear-gradient(90deg, ${color}, #00d4ff) !important; }
-    .btn-primary { background: ${color} !important; box-shadow: 0 0 30px ${color}66 !important; }
-    .pl-dot[style*="${color}"] { box-shadow: 0 0 8px ${color} !important; }
-    .vinyl-label svg path { stroke: ${color} !important; }
-    #visualizer-canvas { border-color: ${color}33 !important; }
+    .logo-text { background: linear-gradient(90deg, ${color}, ${color}bb) !important; -webkit-background-clip: text !important; }
+    .player::before { background: linear-gradient(90deg, transparent, ${color}, transparent) !important; }
+    .btn-primary { background: ${color} !important; box-shadow: 0 4px 20px ${color}55 !important; color: #111009 !important; }
+    .upload-btn { background: ${color} !important; color: #111009 !important; }
+    .upload-btn-small { background: ${color} !important; color: #111009 !important; }
+    .prog-dot { background: ${color} !important; box-shadow: 0 0 8px ${color}cc !important; }
+    .row-wave span { background: ${color} !important; }
+    .row-play-icon { color: ${color} !important; }
+    .like-btn.liked { color: ${color} !important; }
+    .song-like-btn.liked { color: ${color} !important; }
+    .song-like-btn:hover { color: ${color} !important; }
+    .panel-badge { background: ${color} !important; }
+    .search-tag { color: ${color} !important; border-color: ${color}30 !important; background: ${color}0e !important; }
+    .spinner { border-top-color: ${color} !important; }
+    .search-wrap:focus-within { border-color: ${color} !important; box-shadow: 0 0 0 3px ${color}30 !important; }
+    .vinyl-label { border-color: ${color}33 !important; }
+    #visualizer-canvas { border-color: ${color}18 !important; }
+    .ctrl.active { color: ${color} !important; }
   `;
 }
 
