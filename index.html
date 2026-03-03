@@ -220,6 +220,7 @@
 <!-- PLAYER -->
 <footer class="player">
   <div class="player-left">
+    <div class="player-mini-tap" onclick="openMobilePlayer()"></div>
     <div class="now-playing-art" id="nowPlayingArt">
       <img id="nowPlayingImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:10px;"/>
       <span id="nowPlayingIcon"><i class="fas fa-music"></i></span>
@@ -295,6 +296,45 @@
       <div class="kb-row"><kbd>S</kbd><span>Toggle shuffle</span></div>
       <div class="kb-row"><kbd>R</kbd><span>Toggle repeat</span></div>
     </div>
+<!-- MOBILE FULL PLAYER SHEET -->
+<div class="mobile-player-sheet" id="mobilePlayerSheet">
+  <div class="mps-header">
+    <button class="mps-close" onclick="closeMobilePlayer()"><i class="fas fa-chevron-down"></i></button>
+    <span class="mps-label">Now Playing</span>
+    <button class="mps-close" onclick="closeMobilePlayer();togglePanel(&apos;queue&apos;)"><i class="fas fa-list"></i></button>
+  </div>
+  <div class="mps-art" id="mpsArt"><i class="fas fa-music"></i></div>
+  <div class="mps-info" style="position:relative">
+    <p class="mps-title" id="mpsTitle">Select a song</p>
+    <p class="mps-artist" id="mpsArtist">&mdash;</p>
+    <button class="mps-like" id="mpsLikeBtn" onclick="toggleLike()"><i class="far fa-heart"></i></button>
+  </div>
+  <div class="mps-progress">
+    <div class="prog-track" id="mpsProgTrack" onclick="seekTo(event)" style="height:4px">
+      <div class="prog-fill" id="mpsProgFill" style="height:100%;border-radius:4px"></div>
+      <div class="prog-dot" id="mpsProgDot"></div>
+    </div>
+  </div>
+  <div class="mps-times"><span id="mpsCurTime">0:00</span><span id="mpsDurTime">0:00</span></div>
+  <div class="mps-controls">
+    <button class="mps-ctrl" id="mpsShuffleBtn" onclick="toggleShuffle()"><i class="fas fa-shuffle"></i></button>
+    <button class="mps-ctrl" onclick="prevSong()"><i class="fas fa-backward-step"></i></button>
+    <button class="mps-play" id="mpsPlayBtn" onclick="togglePlay()"><i class="fas fa-play"></i></button>
+    <button class="mps-ctrl" onclick="nextSong()"><i class="fas fa-forward-step"></i></button>
+    <button class="mps-ctrl" id="mpsRepeatBtn" onclick="toggleRepeat()"><i class="fas fa-repeat"></i></button>
+  </div>
+  <div class="mps-vol">
+    <i class="fas fa-volume-low"></i>
+    <div class="mps-vol-track" onclick="setMpsVol(event)"><div class="mps-vol-fill" id="mpsVolFill" style="width:80%"></div></div>
+    <i class="fas fa-volume-high"></i>
+  </div>
+  <div class="mps-extras">
+    <button class="mps-extra-btn" id="mpsSleepBtn" onclick="cycleSleepTimer()"><i class="fas fa-moon"></i><span>Sleep</span></button>
+    <button class="mps-extra-btn" onclick="closeMobilePlayer();togglePanel(&apos;recent&apos;)"><i class="fas fa-clock-rotate-left"></i><span>Recent</span></button>
+    <button class="mps-extra-btn" onclick="showKeyboardHelp()"><i class="fas fa-keyboard"></i><span>Shortcuts</span></button>
+  </div>
+</div>
+
   </div>
 </div>
 

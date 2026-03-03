@@ -1015,3 +1015,95 @@ function showKeyboardHelp() {
 
 // ── START ─────────────────────────────────
 init();
+
+// ── 📱 MOBILE PLAYER SHEET ───────────────
+function openMobilePlayer() {
+  if (window.innerWidth > 768) return;
+  document.getElementById("mobilePlayerSheet").classList.add("open");
+  syncMobileSheet();
+}
+function closeMobilePlayer() {
+  document.getElementById("mobilePlayerSheet").classList.remove("open");
+}
+
+function syncMobileSheet() {
+  if (!songs[curIdx]) return;
+  const song = songs[curIdx];
+
+  // Art
+  const art = document.getElementById("mpsArt");
+  const cover = song.album_image || song.cover || "";
+  art.innerHTML = cover
+    ? '<img src="' + cover + '" style="width:100%;height:100%;object-fit:cover;border-radius:16px"/>'
+    : '<i class="fas fa-music"></i>';
+
+  // Title / artist
+  document.getElementById("mpsTitle").textContent  = song.name || song.title || "Unknown";
+  document.getElementById("mpsArtist").textContent = song.artist_name || song.artist || "";
+
+  // Like button
+  const lb = document.getElementById("mpsLikeBtn");
+  const liked = isLiked(song.id);
+  lb.innerHTML = '<i class="' + (liked ? "fas" : "far") + ' fa-heart"></i>';
+  lb.classList.toggle("liked", liked);
+
+  // Play button state
+  const mpsPlay = document.getElementById("mpsPlayBtn");
+  if (mpsPlay) mpsPlay.innerHTML = playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+
+  // Shuffle / repeat state
+  const msb = document.getElementById("mpsShuffleBtn");
+  const mrb = document.getElementById("mpsRepeatBtn");
+  if (msb) msb.classList.toggle("active", shuffle);
+  if (mrb) mrb.classList.toggle("active", repeat);
+}
+
+// Keep mobile sheet progress in sync
+audio.addEventListener("timeupdate", function() {
+  if (!audio.duration) return;
+  const pct = (audio.currentTime / audio.duration) * 100;
+  const mf = document.getElementById("mpsProgFill");
+  const md = document.getElementById("mpsProgDot");
+  const ct = document.getElementById("mpsCurTime");
+  const dt = document.getElementById("mpsDurTime");
+  if (mf) mf.style.width = pct + "%";
+  if (md) md.style.left  = pct + "%";
+  if (ct) ct.textContent = fmt(audio.currentTime);
+  if (dt) dt.textContent = fmt(audio.duration);
+});
+
+// Volume slider in mobile sheet
+function setMpsVol(e) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const vol  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  audio.volume = vol; lastVol = vol; muted = false;
+  const fill     = document.getElementById("mpsVolFill");
+  const mainFill = document.getElementById("volFill");
+  if (fill)     fill.style.width     = vol * 100 + "%";
+  if (mainFill) mainFill.style.width = vol * 100 + "%";
+}
+
+// Swipe down to close mobile sheet
+(function() {
+  var startY = 0;
+  document.addEventListener("touchstart", function(e) {
+    var sheet = document.getElementById("mobilePlayerSheet");
+    if (sheet && sheet.classList.contains("open")) startY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener("touchend", function(e) {
+    var sheet = document.getElementById("mobilePlayerSheet");
+    if (sheet && sheet.classList.contains("open")) {
+      if (e.changedTouches[0].clientY - startY > 80) closeMobilePlayer();
+    }
+  }, { passive: true });
+})();
+
+// Sync sheet when a song starts playing
+var _origUpdatePlayerBar2 = updatePlayerBar;
+updatePlayerBar = function(song) {
+  _origUpdatePlayerBar2(song);
+  var sheet = document.getElementById("mobilePlayerSheet");
+  if (sheet && sheet.classList.contains("open")) syncMobileSheet();
+  var mpsPlay = document.getElementById("mpsPlayBtn");
+  if (mpsPlay) mpsPlay.innerHTML = '<i class="fas fa-pause"></i>';
+};
