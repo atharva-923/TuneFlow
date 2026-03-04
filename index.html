@@ -4,23 +4,17 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TuneFlow</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><circle cx='14' cy='14' r='13' stroke='%236ecfab' stroke-width='2' fill='none'/><path d='M9 10 L9 18 M13 7 L13 21 M17 11 L17 17 M21 9 L21 19' stroke='%236ecfab' stroke-width='2' stroke-linecap='round'/></svg>"/>
   <link rel="stylesheet" href="style.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
 <body>
 
-<div class="ambient">
-  <div class="blob blob-1"></div>
-  <div class="blob blob-2"></div>
-  <div class="blob blob-3"></div>
-</div>
-
-<!-- SIDE PANELS (Queue + Recently Played) -->
+<!-- PANELS -->
 <div class="side-panel" id="panel-queue">
   <div class="panel-header">
-    <h3>🎵 Up Next <span id="queueCount" class="panel-badge"></span></h3>
+    <h3>Up Next <span id="queueCount" class="panel-badge"></span></h3>
     <div style="display:flex;gap:8px">
       <button onclick="clearQueue()" class="panel-action-btn">Clear</button>
       <button onclick="togglePanel('queue')" class="panel-close"><i class="fas fa-times"></i></button>
@@ -28,256 +22,15 @@
   </div>
   <div id="queueList" class="panel-body"></div>
 </div>
-
 <div class="side-panel" id="panel-recent">
   <div class="panel-header">
-    <h3>🕐 Recently Played</h3>
+    <h3>Recently Played</h3>
     <button onclick="togglePanel('recent')" class="panel-close"><i class="fas fa-times"></i></button>
   </div>
   <div id="recentList" class="panel-body"></div>
 </div>
 
-<!-- SIDEBAR -->
-<aside class="sidebar">
-  <div class="logo">
-    <div class="logo-mark">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <circle cx="14" cy="14" r="13" stroke="url(#lg)" stroke-width="2"/>
-        <path d="M9 10 L9 18 M13 7 L13 21 M17 11 L17 17 M21 9 L21 19" stroke="url(#lg)" stroke-width="2" stroke-linecap="round"/>
-        <defs>
-          <linearGradient id="lg" x1="0" y1="0" x2="28" y2="28">
-            <stop offset="0%" stop-color="#7fb88a"/>
-            <stop offset="100%" stop-color="#a8d4b0"/>
-          </linearGradient>
-        </defs>
-      </svg>
-    </div>
-    <span class="logo-text">TuneFlow</span>
-  </div>
-
-  <nav class="nav">
-    <a href="#" class="nav-item active" id="nav-home" onclick="showSection('home'); return false;">
-      <i class="fas fa-house"></i><span>Home</span>
-    </a>
-    <a href="#" class="nav-item" id="nav-search" onclick="showSection('search'); return false;">
-      <i class="fas fa-search"></i><span>Search</span>
-    </a>
-    <a href="#" class="nav-item" id="nav-library" onclick="showSection('library'); return false;">
-      <i class="fas fa-heart"></i><span>Liked Songs</span>
-    </a>
-    <a href="#" class="nav-item" id="nav-mymusic" onclick="showSection('mymusic'); return false;">
-      <i class="fas fa-upload"></i><span>My Music</span>
-    </a>
-  </nav>
-
-  <div class="sidebar-divider"></div>
-
-  <div class="sidebar-section">
-    <p class="sidebar-label">GENRES</p>
-    <ul class="playlist-list">
-      <li class="playlist-item active" onclick="loadGenre('lofi', this)">
-        <span class="pl-dot" style="background:#7fb88a"></span> Lo-fi
-      </li>
-      <li class="playlist-item" onclick="loadGenre('pop', this)">
-        <span class="pl-dot" style="background:#888"></span> Pop
-      </li>
-      <li class="playlist-item" onclick="loadGenre('rock', this)">
-        <span class="pl-dot" style="background:#888"></span> Rock
-      </li>
-      <li class="playlist-item" onclick="loadGenre('hiphop', this)">
-        <span class="pl-dot" style="background:#888"></span> Hip-Hop
-      </li>
-      <li class="playlist-item" onclick="loadGenre('electronic', this)">
-        <span class="pl-dot" style="background:#888"></span> Electronic
-      </li>
-      <li class="playlist-item" onclick="loadGenre('jazz', this)">
-        <span class="pl-dot" style="background:#888"></span> Jazz
-      </li>
-    </ul>
-  </div>
-
-  <div class="sidebar-now-playing" id="sidebarNowPlaying">
-    <div class="snp-cover" id="snpCover"><i class="fas fa-music"></i></div>
-    <div class="snp-info">
-      <p class="snp-title" id="snpTitle">Nothing playing</p>
-      <p class="snp-artist" id="snpArtist">—</p>
-    </div>
-  </div>
-</aside>
-
-<!-- MAIN -->
-<main class="main">
-  <header class="topbar">
-    <div class="topbar-nav">
-      <button class="icon-btn" id="mobileMenuBtn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')">
-        <i class="fas fa-bars"></i>
-      </button>
-      <button class="icon-btn"><i class="fas fa-chevron-left"></i></button>
-      <button class="icon-btn"><i class="fas fa-chevron-right"></i></button>
-    </div>
-    <div class="search-wrap">
-      <i class="fas fa-search"></i>
-      <input type="text" id="searchInput" placeholder="Search real songs, artists..."/>
-      <button class="search-clear" id="searchClear" onclick="clearSearch()"><i class="fas fa-times"></i></button>
-    </div>
-    <div class="topbar-right">
-      <button class="icon-btn topbar-panel-btn" onclick="togglePanel('recent')" title="Recently Played">
-        <i class="fas fa-clock"></i>
-      </button>
-      <button class="icon-btn topbar-panel-btn" onclick="togglePanel('queue')" title="Queue">
-        <i class="fas fa-list"></i>
-      </button>
-      <button class="icon-btn" onclick="showKeyboardHelp()" title="Keyboard shortcuts"><i class="fas fa-keyboard"></i></button>
-      <button class="profile-btn"><i class="fas fa-user"></i> <span class="profile-name">atharva-923</span></button>
-    </div>
-  </header>
-
-  <!-- HOME -->
-  <div id="section-home">
-    <section class="banner" id="banner">
-      <div class="banner-glow"></div>
-      <div class="banner-content">
-        <span class="banner-tag">✦ STREAMING LIVE</span>
-        <h1 class="banner-title" id="bannerTitle">Lo-fi Beats</h1>
-        <p class="banner-meta" id="bannerMeta">Real songs from Jamendo • Free & Legal</p>
-        <div class="banner-actions">
-          <button class="btn-primary" onclick="playAll()"><i class="fas fa-play"></i> Play All</button>
-          <button class="btn-ghost" onclick="toggleShuffle(); playAll()"><i class="fas fa-shuffle"></i> Shuffle</button>
-        </div>
-      </div>
-      <div class="banner-visual">
-        <div class="vinyl" id="vinyl">
-          <div class="vinyl-label" id="vinylArt">
-            <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-              <path d="M9 10 L9 18 M13 7 L13 21 M17 11 L17 17 M21 9 L21 19" stroke="#7fb88a" stroke-width="2.5" stroke-linecap="round"/>
-            </svg>
-          </div>
-        </div>
-        <div class="vinyl-shadow"></div>
-      </div>
-    </section>
-
-    <section class="content-section">
-      <div class="section-header">
-        <h2 class="section-title" id="sectionTitle">Tracklist</h2>
-        <span class="song-count" id="songCount"></span>
-      </div>
-      <div class="song-table-header">
-        <span>#</span><span>TITLE</span><span>ARTIST</span>
-        <span><i class="fas fa-clock"></i></span><span></span>
-      </div>
-      <div id="songList"><div class="loading-state"><div class="spinner"></div><p>Loading real songs...</p></div></div>
-    </section>
-
-    <section class="content-section">
-      <h2 class="section-title">Browse by Genre</h2>
-      <div class="cards-grid" id="genreCards"></div>
-    </section>
-  </div>
-
-  <!-- SEARCH -->
-  <div id="section-search" style="display:none">
-    <div class="content-section">
-      <h2 class="section-title">Search Results</h2>
-      <div id="searchResults">
-        <div class="search-empty"><div style="font-size:2.5rem;margin-bottom:12px">🎵</div><p>Type something to search</p></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- LIBRARY -->
-  <div id="section-library" style="display:none">
-    <div class="content-section">
-      <div class="library-header">
-        <h2 class="section-title">💜 Liked Songs</h2>
-        <p class="library-sub" id="likedCount">0 songs liked</p>
-      </div>
-      <div id="likedList">
-        <div class="empty-library"><div class="empty-icon">🎵</div><p>No liked songs yet</p><span>Hit the ♥ on any song</span></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MY MUSIC -->
-  <div id="section-mymusic" style="display:none">
-    <div class="content-section">
-      <div class="library-header">
-        <h2 class="section-title">🎵 My Music</h2>
-        <p class="library-sub">Your uploaded songs</p>
-      </div>
-      <input type="file" id="musicUpload" accept="audio/*" multiple style="display:none"/>
-      <div id="myMusicList">
-        <div class="upload-prompt">
-          <label for="musicUpload" class="upload-btn">
-            <i class="fas fa-cloud-arrow-up"></i> Upload Your Music
-          </label>
-          <p>Supports MP3, WAV, OGG<br/>Name files as <strong>"Artist - Title.mp3"</strong> for best results</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</main>
-
-<!-- PLAYER -->
-<footer class="player">
-  <div class="player-left">
-    <div class="player-mini-tap" onclick="openMobilePlayer()"></div>
-    <div class="now-playing-art" id="nowPlayingArt">
-      <img id="nowPlayingImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:10px;"/>
-      <span id="nowPlayingIcon"><i class="fas fa-music"></i></span>
-      <div class="art-glow" id="artGlow"></div>
-    </div>
-    <div class="now-playing-info">
-      <p class="np-title" id="npTitle">Select a song</p>
-      <p class="np-artist" id="npArtist">—</p>
-    </div>
-    <button class="like-btn" id="likeBtn" onclick="toggleLike()"><i class="far fa-heart"></i></button>
-  </div>
-
-  <div class="player-center">
-    <div class="ctrl-row">
-      <button class="ctrl" id="shuffleBtn" onclick="toggleShuffle()"><i class="fas fa-shuffle"></i></button>
-      <button class="ctrl" onclick="prevSong()"><i class="fas fa-backward-step"></i></button>
-      <button class="play-pause" id="playPauseBtn" onclick="togglePlay()"><i class="fas fa-play"></i></button>
-      <button class="ctrl" onclick="nextSong()"><i class="fas fa-forward-step"></i></button>
-      <button class="ctrl" id="repeatBtn" onclick="toggleRepeat()"><i class="fas fa-repeat"></i></button>
-    </div>
-    <div class="progress-row">
-      <span class="time-label" id="curTime">0:00</span>
-      <div class="prog-track" id="progTrack" onclick="seekTo(event)">
-        <div class="prog-fill" id="progFill"></div>
-        <div class="prog-dot" id="progDot"></div>
-      </div>
-      <span class="time-label" id="durTime">0:00</span>
-    </div>
-  </div>
-
-  <div class="player-right">
-    <button class="ctrl" id="sleepBtn" onclick="cycleSleepTimer()" title="Sleep Timer"><i class="fas fa-moon"></i></button>
-    <div class="crossfade-wrap">
-      <button class="ctrl" id="crossfadeBtn" onclick="toggleCrossfadeMenu()" title="Crossfade"><i class="fas fa-shuffle" style="font-size:0.7rem"></i><span class="cf-label">CF</span></button>
-      <div class="crossfade-menu" id="crossfadeMenu">
-        <p class="cf-title">Crossfade</p>
-        <div class="cf-options">
-          <button class="cf-option" data-secs="0" onclick="setCrossfade(0)">Off</button>
-          <button class="cf-option" data-secs="2" onclick="setCrossfade(2)">2s</button>
-          <button class="cf-option active" data-secs="3" onclick="setCrossfade(3)">3s</button>
-          <button class="cf-option" data-secs="5" onclick="setCrossfade(5)">5s</button>
-        </div>
-      </div>
-    </div>
-    <button class="ctrl" onclick="togglePanel('queue')" title="Queue"><i class="fas fa-list"></i></button>
-    <button class="ctrl" onclick="toggleMute()" id="muteBtn"><i class="fas fa-volume-high"></i></button>
-    <div class="vol-track" onclick="setVol(event)">
-      <div class="vol-fill" id="volFill" style="width:80%"></div>
-    </div>
-  </div>
-</footer>
-
-<!-- Mobile overlay -->
-<div class="sidebar-overlay" onclick="document.querySelector('.sidebar').classList.remove('mobile-open')"></div>
-
-<!-- KEYBOARD SHORTCUTS MODAL -->
+<!-- KEYBOARD MODAL -->
 <div class="kb-modal" id="kbModal" onclick="this.classList.remove('open')">
   <div class="kb-panel" onclick="event.stopPropagation()">
     <div class="kb-header">
@@ -286,34 +39,201 @@
     </div>
     <div class="kb-grid">
       <div class="kb-row"><kbd>Space</kbd><span>Play / Pause</span></div>
-      <div class="kb-row"><kbd>Shift</kbd><kbd>→</kbd><span>Next song</span></div>
-      <div class="kb-row"><kbd>Shift</kbd><kbd>←</kbd><span>Previous song</span></div>
-      <div class="kb-row"><kbd>→</kbd><span>Forward 10s</span></div>
-      <div class="kb-row"><kbd>←</kbd><span>Rewind 10s</span></div>
-      <div class="kb-row"><kbd>↑</kbd><span>Volume up</span></div>
-      <div class="kb-row"><kbd>↓</kbd><span>Volume down</span></div>
-      <div class="kb-row"><kbd>M</kbd><span>Mute / Unmute</span></div>
+      <div class="kb-row"><kbd>Shift</kbd><kbd>&#8594;</kbd><span>Next song</span></div>
+      <div class="kb-row"><kbd>Shift</kbd><kbd>&#8592;</kbd><span>Previous song</span></div>
+      <div class="kb-row"><kbd>&#8594;</kbd><span>Forward 10s</span></div>
+      <div class="kb-row"><kbd>&#8592;</kbd><span>Rewind 10s</span></div>
+      <div class="kb-row"><kbd>&#8593;</kbd><span>Volume up</span></div>
+      <div class="kb-row"><kbd>&#8595;</kbd><span>Volume down</span></div>
+      <div class="kb-row"><kbd>M</kbd><span>Mute</span></div>
       <div class="kb-row"><kbd>L</kbd><span>Like song</span></div>
-      <div class="kb-row"><kbd>S</kbd><span>Toggle shuffle</span></div>
-      <div class="kb-row"><kbd>R</kbd><span>Toggle repeat</span></div>
+      <div class="kb-row"><kbd>S</kbd><span>Shuffle</span></div>
+      <div class="kb-row"><kbd>R</kbd><span>Repeat</span></div>
     </div>
+  </div>
+</div>
+
+<!-- MOBILE SIDEBAR OVERLAY -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
+<aside class="mobile-sidebar" id="mobileSidebar">
+  <div class="msb-top">
+    <div class="logo"><div class="logo-mark"><i class="fas fa-wave-square"></i></div><span class="logo-name">TuneFlow</span></div>
+    <button class="panel-close" onclick="closeMobileSidebar()"><i class="fas fa-times"></i></button>
+  </div>
+  <nav class="msb-nav">
+    <a class="msb-item active" id="msb-home" onclick="showSection('home');closeMobileSidebar()"><i class="fas fa-house"></i> Home</a>
+    <a class="msb-item" id="msb-search" onclick="showSection('search');closeMobileSidebar()"><i class="fas fa-search"></i> Search</a>
+    <a class="msb-item" id="msb-library" onclick="showSection('library');closeMobileSidebar()"><i class="fas fa-heart"></i> Liked Songs</a>
+    <a class="msb-item" id="msb-mymusic" onclick="showSection('mymusic');closeMobileSidebar()"><i class="fas fa-upload"></i> My Music</a>
+  </nav>
+  <div class="msb-divider"></div>
+  <p class="msb-label">Genres</p>
+  <div class="msb-genres" id="msbGenres"></div>
+</aside>
+
+<!-- APP SHELL -->
+<div class="app-shell">
+
+  <!-- TOP NAV -->
+  <header class="topnav">
+    <button class="nbtn mobile-show" id="mobileMenuBtn" onclick="openMobileSidebar()" style="display:none"><i class="fas fa-bars"></i></button>
+    <div class="logo desktop-show">
+      <div class="logo-mark"><i class="fas fa-wave-square"></i></div>
+      <span class="logo-name">TuneFlow</span>
+    </div>
+    <nav class="nav-tabs desktop-show">
+      <div class="nav-tab active" id="nav-home" onclick="showSection('home')"><i class="fas fa-house"></i> Home</div>
+      <div class="nav-tab" id="nav-search" onclick="showSection('search')"><i class="fas fa-search"></i> Search</div>
+      <div class="nav-tab" id="nav-library" onclick="showSection('library')"><i class="fas fa-heart"></i> Liked</div>
+      <div class="nav-tab" id="nav-mymusic" onclick="showSection('mymusic')"><i class="fas fa-upload"></i> My Music</div>
+    </nav>
+    <div class="nav-center">
+      <div class="search-pill">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Search songs, artists&#8230;"/>
+        <button class="search-x" id="searchClear" onclick="clearSearch()" style="display:none"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+    <div class="nav-right">
+      <button class="nbtn desktop-show" onclick="togglePanel('queue')" title="Queue"><i class="fas fa-list-ul"></i></button>
+      <button class="nbtn desktop-show" onclick="togglePanel('recent')" title="Recent"><i class="fas fa-clock-rotate-left"></i></button>
+      <button class="nbtn desktop-show" onclick="showKeyboardHelp()" title="Shortcuts"><i class="fas fa-keyboard"></i></button>
+      <div class="avatar"><i class="fas fa-user"></i><span class="avatar-name">atharva-923</span></div>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content-shell">
+
+    <!-- HOME: two-panel -->
+    <div id="section-home" class="two-panel">
+
+      <aside class="list-panel">
+        <div class="list-head">
+          <div class="chips" id="genreChips"></div>
+          <div class="tbl-head">
+            <span>#</span><span>Title</span>
+            <span style="text-align:right"><i class="fas fa-clock" style="font-size:0.65rem"></i></span>
+            <span></span>
+          </div>
+        </div>
+        <div class="slist" id="songList">
+          <div class="loading-state"><div class="spinner"></div><p>Loading from Jamendo&#8230;</p></div>
+        </div>
+      </aside>
+
+      <div class="now-panel">
+        <div class="art-area">
+          <div class="art-glow" id="artGlow"></div>
+          <div class="deco-ring" id="decoRing"></div>
+          <div class="big-art" id="bigArt"><i class="fas fa-music"></i></div>
+          <div class="song-meta">
+            <h2 class="big-title" id="bigTitle">Select a song</h2>
+            <p class="big-by" id="bigArtistEl">&#8212;</p>
+            <div class="pill-row">
+              <span class="pill live" id="nowPill">&#9679; Lo-fi</span>
+              <span class="pill">Jamendo</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="player-bar">
+          <div class="prog-row">
+            <span class="ptime" id="curTime">0:00</span>
+            <div class="ptrack" id="progTrack" onclick="seekTo(event)">
+              <div class="pfill" id="progFill"></div>
+              <div class="pdot" id="progDot"></div>
+            </div>
+            <span class="ptime" id="durTime">0:00</span>
+          </div>
+          <div class="ctrl-row">
+            <div class="cgroup">
+              <button class="cbtn sm" id="shuffleBtn" onclick="toggleShuffle()"><i class="fas fa-shuffle"></i></button>
+              <button class="cbtn sm" id="repeatBtn" onclick="toggleRepeat()"><i class="fas fa-repeat"></i></button>
+              <button class="cbtn sm" id="likeBtn" onclick="toggleLike()"><i class="far fa-heart"></i></button>
+            </div>
+            <div class="cgroup">
+              <button class="cbtn" onclick="prevSong()"><i class="fas fa-backward-step"></i></button>
+              <button class="play-btn" id="playPauseBtn" onclick="togglePlay()"><i class="fas fa-play"></i></button>
+              <button class="cbtn" onclick="nextSong()"><i class="fas fa-forward-step"></i></button>
+            </div>
+            <div class="cgroup">
+              <button class="cbtn sm" id="sleepBtn" onclick="cycleSleepTimer()"><i class="fas fa-moon"></i></button>
+              <div class="crossfade-wrap">
+                <button class="cbtn sm cf-btn" id="crossfadeBtn" onclick="toggleCrossfadeMenu()"><i class="fas fa-shuffle" style="font-size:0.58rem"></i><span class="cf-lbl">CF</span></button>
+                <div class="crossfade-menu" id="crossfadeMenu">
+                  <p class="cf-title">Crossfade</p>
+                  <div class="cf-opts">
+                    <button class="cf-opt" data-secs="0" onclick="setCrossfade(0)">Off</button>
+                    <button class="cf-opt" data-secs="2" onclick="setCrossfade(2)">2s</button>
+                    <button class="cf-opt active" data-secs="3" onclick="setCrossfade(3)">3s</button>
+                    <button class="cf-opt" data-secs="5" onclick="setCrossfade(5)">5s</button>
+                  </div>
+                </div>
+              </div>
+              <button class="cbtn sm" id="muteBtn" onclick="toggleMute()"><i class="fas fa-volume-high"></i></button>
+              <div class="vtrack" onclick="setVol(event)"><div class="vfill" id="volFill" style="width:80%"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEARCH -->
+    <div id="section-search" class="section-page" style="display:none">
+      <h2 class="page-title">Search Results</h2>
+      <div id="searchResults"><div class="empty-state"><i class="fas fa-search"></i><p>Type to search</p></div></div>
+    </div>
+
+    <!-- LIBRARY -->
+    <div id="section-library" class="section-page" style="display:none">
+      <div class="page-header">
+        <h2 class="page-title">Liked Songs</h2>
+        <p class="page-sub" id="likedCount">0 songs liked</p>
+      </div>
+      <div id="likedList"><div class="empty-state"><i class="fas fa-heart"></i><p>No liked songs yet</p></div></div>
+    </div>
+
+    <!-- MY MUSIC -->
+    <div id="section-mymusic" class="section-page" style="display:none">
+      <div class="page-header">
+        <h2 class="page-title">My Music</h2>
+        <p class="page-sub">Your uploaded songs</p>
+      </div>
+      <input type="file" id="musicUpload" accept="audio/*" multiple style="display:none"/>
+      <div id="myMusicList">
+        <div class="upload-prompt">
+          <label for="musicUpload" class="upload-btn"><i class="fas fa-cloud-arrow-up"></i> Upload Music</label>
+          <p>Supports MP3, WAV, OGG &#8212; name as <strong>Artist - Title.mp3</strong></p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- NOW PLAYING NOTIF -->
+<div class="now-notif" id="nowNotif">
+  <div class="notif-art" id="notifArt"><i class="fas fa-music"></i></div>
+  <div><p class="notif-label">Now Playing</p><p class="notif-title" id="notifTitle">&#8212;</p><p class="notif-artist" id="notifArtist">&#8212;</p></div>
+</div>
+
 <!-- MOBILE FULL PLAYER SHEET -->
 <div class="mobile-player-sheet" id="mobilePlayerSheet">
   <div class="mps-header">
     <button class="mps-close" onclick="closeMobilePlayer()"><i class="fas fa-chevron-down"></i></button>
     <span class="mps-label">Now Playing</span>
-    <button class="mps-close" onclick="closeMobilePlayer();togglePanel(&apos;queue&apos;)"><i class="fas fa-list"></i></button>
+    <button class="mps-close" onclick="closeMobilePlayer();togglePanel('queue')"><i class="fas fa-list"></i></button>
   </div>
   <div class="mps-art" id="mpsArt"><i class="fas fa-music"></i></div>
   <div class="mps-info" style="position:relative">
     <p class="mps-title" id="mpsTitle">Select a song</p>
-    <p class="mps-artist" id="mpsArtist">&mdash;</p>
+    <p class="mps-artist" id="mpsArtist">&#8212;</p>
     <button class="mps-like" id="mpsLikeBtn" onclick="toggleLike()"><i class="far fa-heart"></i></button>
   </div>
   <div class="mps-progress">
-    <div class="prog-track" id="mpsProgTrack" onclick="seekTo(event)" style="height:4px">
-      <div class="prog-fill" id="mpsProgFill" style="height:100%;border-radius:4px"></div>
-      <div class="prog-dot" id="mpsProgDot"></div>
+    <div class="ptrack" id="mpsProgTrack" onclick="seekTo(event)" style="height:4px">
+      <div class="pfill" id="mpsProgFill" style="height:100%;border-radius:4px"></div>
     </div>
   </div>
   <div class="mps-times"><span id="mpsCurTime">0:00</span><span id="mpsDurTime">0:00</span></div>
@@ -331,12 +251,20 @@
   </div>
   <div class="mps-extras">
     <button class="mps-extra-btn" id="mpsSleepBtn" onclick="cycleSleepTimer()"><i class="fas fa-moon"></i><span>Sleep</span></button>
-    <button class="mps-extra-btn" onclick="closeMobilePlayer();togglePanel(&apos;recent&apos;)"><i class="fas fa-clock-rotate-left"></i><span>Recent</span></button>
+    <button class="mps-extra-btn" onclick="closeMobilePlayer();togglePanel('recent')"><i class="fas fa-clock-rotate-left"></i><span>Recent</span></button>
     <button class="mps-extra-btn" onclick="showKeyboardHelp()"><i class="fas fa-keyboard"></i><span>Shortcuts</span></button>
   </div>
 </div>
 
+<!-- MOBILE MINI PLAYER -->
+<div class="mini-player" id="miniPlayer">
+  <div class="mini-art" id="miniArt" onclick="openMobilePlayer()"><i class="fas fa-music"></i></div>
+  <div class="mini-info" onclick="openMobilePlayer()">
+    <p class="mini-title" id="miniTitle">Select a song</p>
+    <p class="mini-artist" id="miniArtist">&#8212;</p>
   </div>
+  <button class="mini-play" id="miniPlayBtn" onclick="togglePlay()"><i class="fas fa-play"></i></button>
+  <button class="mini-next" onclick="nextSong()"><i class="fas fa-forward-step"></i></button>
 </div>
 
 <audio id="audio"></audio>

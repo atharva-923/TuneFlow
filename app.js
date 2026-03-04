@@ -1,13 +1,14 @@
 // ============================================================
-//  TUNEFLOW v4 — app.js
-//  Features: Queue, Recently Played, Dynamic Theme,
-//  Audio Visualizer, Mobile, Upload Your Own Music
+//  TUNEFLOW v6 — app.js
+//  Two-panel editorial layout
+//  Features: Queue, Recently Played, Liked, Upload,
+//            Sleep Timer, Crossfade, Keyboard Shortcuts, Mobile
 // ============================================================
 
 const JAMENDO_ID = "a72d03df";
 const JAMENDO   = "https://api.jamendo.com/v3.0";
 
-// ── STATE ─────────────────────────────────
+// ── STATE ─────────────────────────────────────────────
 let songs          = [];
 let curIdx         = -1;
 let playing        = false;
@@ -15,400 +16,393 @@ let shuffle        = false;
 let repeat         = false;
 let muted          = false;
 let lastVol        = 0.8;
-let likedSongs     = JSON.parse(localStorage.getItem("tf_liked") || "[]");
-let recentlyPlayed = JSON.parse(localStorage.getItem("tf_recent") || "[]");
+let likedSongs     = JSON.parse(localStorage.getItem("tf_liked")    || "[]");
+let recentlyPlayed = JSON.parse(localStorage.getItem("tf_recent")   || "[]");
 let queue          = [];
-let myMusic        = JSON.parse(localStorage.getItem("tf_mymusic") || "[]");
+let myMusic        = JSON.parse(localStorage.getItem("tf_mymusic")  || "[]");
 let curGenre       = "lofi";
 let searchTimer    = null;
 let currentSection = "home";
 
-// Audio visualizer
-let audioCtx, analyser, source, animFrame;
-let vizActive = false;
+// Sleep timer
+let sleepTimer    = null;
+let sleepMins     = 0;
+let sleepInterval = null;
+
+// Crossfade
+let crossfadeSecs   = parseInt(localStorage.getItem("tf_crossfade") || "3");
+let crossfadeActive = false;
 
 const audio = document.getElementById("audio");
 audio.volume = 0.8;
 
-// ── GENRE CONFIG ──────────────────────────
+// ── GENRES ────────────────────────────────────────────
 const genres = [
-  { id: "lofi",       label: "Lo-fi",      emoji: "🌙", color: "#7fb88a", tags: "lofi" },
-  { id: "pop",        label: "Pop",         emoji: "🎤", color: "#7fb88a", tags: "pop" },
-  { id: "rock",       label: "Rock",        emoji: "🎸", color: "#7fb88a", tags: "rock" },
-  { id: "hiphop",     label: "Hip-Hop",     emoji: "🎧", color: "#7fb88a", tags: "hiphop" },
-  { id: "electronic", label: "Electronic",  emoji: "⚡", color: "#7fb88a", tags: "electronic" },
-  { id: "jazz",       label: "Jazz",        emoji: "🎷", color: "#7fb88a", tags: "jazz" },
+  { id: "lofi",       label: "Lo-fi",      tags: "lofi" },
+  { id: "pop",        label: "Pop",        tags: "pop" },
+  { id: "rock",       label: "Rock",       tags: "rock" },
+  { id: "hiphop",     label: "Hip-Hop",    tags: "hiphop" },
+  { id: "electronic", label: "Electronic", tags: "electronic" },
+  { id: "jazz",       label: "Jazz",       tags: "jazz" },
 ];
 
-// ── BOOT ──────────────────────────────────
+// ── BOOT ──────────────────────────────────────────────
 function init() {
-  renderGenreCards();
-  loadGenre("lofi", document.querySelector(".playlist-item"));
+  renderGenreChips();
+  renderMobileSidebarGenres();
+  loadGenre("lofi");
   bindSearch();
-  setupVisualizer();
   setupUpload();
+  setupCrossfade();
+  setupKeyboard();
   renderQueue();
   renderRecent();
+  loadCrossfadePref();
+  document.addEventListener("click", e => {
+    if (!e.target.closest(".crossfade-wrap")) {
+      document.getElementById("crossfadeMenu")?.classList.remove("open");
+    }
+  });
 }
 
-// ── FETCH FROM JAMENDO ────────────────────
+// ── GENRE CHIPS (left panel) ──────────────────────────
+function renderGenreChips() {
+  const el = document.getElementById("genreChips");
+  if (!el) return;
+  el.innerHTML = genres.map(g => `
+    <div class="chip ${g.id === curGenre ? "active" : ""}"
+         onclick="loadGenre('${g.id}')">${g.label}</div>
+  `).join("");
+}
+
+function renderMobileSidebarGenres() {
+  const el = document.getElementById("msbGenres");
+  if (!el) return;
+  el.innerHTML = genres.map(g => `
+    <div class="msb-genre-item ${g.id === curGenre ? "active" : ""}"
+         onclick="loadGenre('${g.id}');closeMobileSidebar()">
+      <div class="msb-dot ${g.id === curGenre ? "active" : ""}"></div>
+      ${g.label}
+    </div>
+  `).join("");
+}
+
+// ── FETCH FROM JAMENDO ────────────────────────────────
 async function fetchTracks(params) {
   const url = new URL(`${JAMENDO}/tracks/`);
   url.searchParams.set("client_id", JAMENDO_ID);
-  url.searchParams.set("format", "json");
-  url.searchParams.set("limit", "20");
+  url.searchParams.set("format",      "json");
+  url.searchParams.set("limit",       "20");
   url.searchParams.set("audioformat", "mp32");
-  url.searchParams.set("imagesize", "200");
+  url.searchParams.set("imagesize",   "200");
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   try {
-    const res = await fetch(url.toString());
+    const res  = await fetch(url.toString());
     const data = await res.json();
     return data.results || [];
-  } catch (e) { return []; }
+  } catch { return []; }
 }
 
-// ── LOAD GENRE ────────────────────────────
-async function loadGenre(genreId, el) {
+// ── LOAD GENRE ────────────────────────────────────────
+async function loadGenre(genreId) {
   curGenre = genreId;
-  curIdx = -1;
-  const g = genres.find(x => x.id === genreId);
-
-  document.querySelectorAll(".playlist-item").forEach(li => li.classList.remove("active"));
-  if (el) el.classList.add("active");
-
-  document.getElementById("bannerTitle").textContent = g.label;
-  document.getElementById("bannerMeta").textContent = "Real songs from Jamendo • Free & Legal";
-  document.getElementById("sectionTitle").textContent = g.label + " Tracks";
-  setDynamicTheme(g.color);
-
+  renderGenreChips();
+  renderMobileSidebarGenres();
   showSection("home");
-  showLoading();
 
+  // update now-pill
+  const g = genres.find(x => x.id === genreId);
+  const pill = document.getElementById("nowPill");
+  if (pill) pill.textContent = `● ${g.label}`;
+
+  showLoading();
   const tracks = await fetchTracks({ tags: g.tags, orderby: "popularity_total" });
   songs = tracks;
-  renderSongs(songs, "songList");
-  document.getElementById("songCount").textContent = `${songs.length} songs`;
+  renderSongList(songs);
 }
 
-// ── THEME — single consistent calm accent, CSS handles everything
-function setDynamicTheme(color) {
-  // No dynamic color chaos — CSS accent is always sage green
-}
-
-// ── RENDER SONGS ──────────────────────────
-function renderSongs(list, containerId) {
-  const el = document.getElementById(containerId);
+// ── RENDER SONG LIST (left panel compact rows) ─────────
+function renderSongList(list) {
+  const el = document.getElementById("songList");
+  if (!el) return;
   if (!list.length) {
-    el.innerHTML = `<div class="search-empty"><div style="font-size:2rem;margin-bottom:10px">😔</div><p>No songs found</p></div>`;
+    el.innerHTML = `<div class="empty-state"><i class="fas fa-music"></i><p>No songs found</p></div>`;
     return;
   }
   el.innerHTML = list.map((song, i) => {
-    const isActive  = i === curIdx && containerId === "songList";
-    const isPlaying = isActive && playing;
-    const liked     = isLiked(song.id);
-    const dur       = song.duration ? fmtSec(song.duration) : (song.durationStr || "—");
-    const cover     = song.album_image || song.cover || "";
-    const name      = song.name || song.title || "Unknown";
-    const artist    = song.artist_name || song.artist || "Unknown Artist";
-    const album     = song.album_name || song.album || "";
+    const isActive = i === curIdx;
+    const liked    = isLiked(song.id);
+    const dur      = song.duration ? fmt(song.duration) : "—";
+    const name     = song.name || song.title || "Unknown";
+    const artist   = song.artist_name || song.artist || "Unknown";
 
     return `
-    <div class="song-row ${isActive ? "playing" : ""}" onclick="playSongObj(${i}, '${containerId}')">
-      <div class="song-num-wrap">
-        <span class="row-num">${isPlaying ? "" : i + 1}</span>
-        <div class="row-wave" style="${isPlaying ? "display:flex" : ""}">
-          <span></span><span></span><span></span><span></span>
-        </div>
-        <div class="row-play-icon"><i class="fas fa-play"></i></div>
+    <div class="srow ${isActive ? "active" : ""}" onclick="playSong(${i})">
+      <div style="display:flex;align-items:center;justify-content:center">
+        <div class="mwave"><b></b><b></b><b></b></div>
+        <span class="srow-n">${i + 1}</span>
       </div>
-      <div class="song-title-cell">
-        <div class="song-cover-wrap">
-          ${cover
-            ? `<img src="${cover}" alt="" class="song-cover-img" onerror="this.style.display='none';this.nextSibling.style.display='flex'"/>
-               <div class="song-cover-fallback" style="display:none">🎵</div>`
-            : `<div class="song-cover-fallback">🎵</div>`}
-        </div>
-        <div>
-          <div class="song-name">${name}</div>
-          <div class="song-album">${album}</div>
-        </div>
+      <div class="srow-info">
+        <p class="srow-name">${name}</p>
+        <p class="srow-artist">${artist}</p>
       </div>
-      <div class="song-artist-cell">${artist}</div>
-      <div class="song-dur">${dur}</div>
-      <div style="display:flex;gap:4px;align-items:center">
-        <button class="song-like-btn ${liked ? "liked" : ""}"
-                onclick="event.stopPropagation(); toggleSongLike('${song.id}', ${i}, '${containerId}')">
-          <i class="${liked ? "fas" : "far"} fa-heart"></i>
-        </button>
-        <button class="song-like-btn" title="Add to queue"
-                onclick="event.stopPropagation(); addToQueue(${i}, '${containerId}')">
-          <i class="fas fa-plus"></i>
-        </button>
-      </div>
+      <span class="srow-dur">${dur}</span>
+      <button class="srow-like ${liked ? "liked fas" : "far"} fa-heart"
+              onclick="event.stopPropagation();toggleSongLike('${song.id}',${i})"></button>
     </div>`;
   }).join("");
 }
 
-// ── PLAY ──────────────────────────────────
-function playSongObj(idx, containerId = "songList") {
-  let sourceList = songs;
-  if (containerId === "searchResults") sourceList = window._searchSongs || songs;
-  if (containerId === "likedList")     sourceList = likedSongs.map(l => l.track);
-  if (containerId === "myMusicList")   sourceList = myMusic;
-  if (containerId === "recentList")    sourceList = recentlyPlayed.map(r => r.track);
-
-  if (containerId !== "songList") songs = sourceList;
-
-  const song = sourceList[idx];
+// ── PLAY ──────────────────────────────────────────────
+function playSong(idx, list) {
+  if (list) songs = list;
+  const song = songs[idx];
   if (!song) return;
-
   const src = song.audio || song.src || "";
-  if (!src) { showToast("⚠️ No audio available for this track"); return; }
+  if (!src) { showToast("⚠️ No audio for this track"); return; }
 
-  curIdx = idx;
+  curIdx  = idx;
   audio.src = src.startsWith("http:") ? src.replace("http:", "https:") : src;
   audio.play().catch(() => showToast("Tap play to start 🎵"));
   playing = true;
+  crossfadeActive = false;
 
-  // Dynamic theme from song color
-  const songColor = song._color || getCurrentGenreColor();
-  setDynamicTheme(songColor);
-
-  updatePlayerBar(song);
-  renderSongs(sourceList, containerId);
-  document.getElementById("vinyl").classList.add("playing");
-  document.getElementById("playPauseBtn").innerHTML = `<i class="fas fa-pause"></i>`;
-
-  // Add to recently played
+  updateNowPlaying(song);
+  renderSongList(songs);
   addToRecent(song);
-
-  // Update queue display
   renderQueue();
+  syncMobileUI(song);
 }
 
-function getCurrentGenreColor() {
-  const g = genres.find(x => x.id === curGenre);
-  return g ? g.color : "#b94fff";
-}
+function playAll() { if (songs.length) playSong(0); }
 
-function playAll() { if (songs.length) playSongObj(0); }
-
-// ── PLAYER BAR ────────────────────────────
-function updatePlayerBar(song) {
-  const name   = song.name   || song.title  || "Unknown";
+// ── UPDATE NOW PLAYING (right panel) ──────────────────
+function updateNowPlaying(song) {
+  const name   = song.name || song.title || "Unknown";
   const artist = song.artist_name || song.artist || "Unknown";
+  const cover  = song.album_image || song.cover || "";
 
-  document.getElementById("npTitle").textContent   = name;
-  document.getElementById("npArtist").textContent  = artist;
-  document.getElementById("snpTitle").textContent  = name;
-  document.getElementById("snpArtist").textContent = artist;
-
-  const img  = document.getElementById("nowPlayingImg");
-  const icon = document.getElementById("nowPlayingIcon");
-  const cover = song.album_image || song.cover || "";
-
-  if (cover) {
-    img.src = cover; img.style.display = "block"; icon.style.display = "none";
-    document.getElementById("snpCover").innerHTML =
-      `<img src="${cover}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;"/>`;
-  } else {
-    img.style.display = "none"; icon.style.display = "block";
-    document.getElementById("snpCover").innerHTML = `<i class="fas fa-music"></i>`;
+  // Big art
+  const artEl = document.getElementById("bigArt");
+  if (artEl) {
+    artEl.classList.add("bump");
+    setTimeout(() => artEl.classList.remove("bump"), 250);
+    if (cover) {
+      artEl.innerHTML = `<img src="${cover}" alt=""/>`;
+    } else {
+      artEl.innerHTML = `<i class="fas fa-music"></i>`;
+    }
   }
 
-  document.getElementById("nowPlayingArt").classList.add("has-song");
+  // Title / artist
+  const t = document.getElementById("bigTitle");
+  const a = document.getElementById("bigArtistEl");
+  if (t) t.textContent = name;
+  if (a) a.textContent = artist;
 
-  const liked = isLiked(song.id);
-  const lb = document.getElementById("likeBtn");
-  lb.className = `like-btn ${liked ? "liked" : ""}`;
-  lb.innerHTML = `<i class="${liked ? "fas" : "far"} fa-heart"></i>`;
+  // Play button → pause icon
+  const pb = document.getElementById("playPauseBtn");
+  if (pb) pb.innerHTML = `<i class="fas fa-pause"></i>`;
 
-  // Song change notification
+  // Like button
+  updateLikeBtn();
+
+  // Notification
   showNowPlayingNotif(name, artist, cover);
 }
 
-// ── NOW PLAYING NOTIFICATION ──────────────
-function showNowPlayingNotif(title, artist, cover) {
-  let notif = document.getElementById("now-notif");
-  if (!notif) {
-    notif = document.createElement("div");
-    notif.id = "now-notif";
-    notif.className = "now-notif";
-    document.body.appendChild(notif);
-  }
-  notif.innerHTML = `
-    <div class="notif-art">${cover ? `<img src="${cover}"/>` : "🎵"}</div>
-    <div class="notif-info">
-      <p class="notif-title">${title}</p>
-      <p class="notif-artist">${artist}</p>
-    </div>
-    <div class="notif-label">NOW PLAYING</div>`;
-  notif.classList.add("show");
-  clearTimeout(notif._timer);
-  notif._timer = setTimeout(() => notif.classList.remove("show"), 3000);
-}
-
-// ── CONTROLS ──────────────────────────────
+// ── CONTROLS ──────────────────────────────────────────
 function togglePlay() {
-  if (curIdx === -1) { playAll(); return; }
+  if (curIdx === -1 && songs.length) { playSong(0); return; }
+  if (curIdx === -1) return;
   if (playing) {
     audio.pause(); playing = false;
-    document.getElementById("playPauseBtn").innerHTML = `<i class="fas fa-play"></i>`;
-    document.getElementById("vinyl").classList.remove("playing");
-    stopVisualizer();
+    setPlayIcons("play");
   } else {
     audio.play(); playing = true;
-    document.getElementById("playPauseBtn").innerHTML = `<i class="fas fa-pause"></i>`;
-    document.getElementById("vinyl").classList.add("playing");
-    startVisualizer();
+    setPlayIcons("pause");
   }
+}
+
+function setPlayIcons(icon) {
+  const i = `<i class="fas fa-${icon}"></i>`;
+  const pb  = document.getElementById("playPauseBtn");
+  const mpb = document.getElementById("mpsPlayBtn");
+  const mib = document.getElementById("miniPlayBtn");
+  if (pb)  pb.innerHTML  = i;
+  if (mpb) mpb.innerHTML = i;
+  if (mib) mib.innerHTML = i;
 }
 
 function nextSong() {
   if (!songs.length) return;
-  // Check queue first
-  if (queue.length > 0) {
+  if (queue.length) {
     const next = queue.shift();
-    songs = [next, ...songs];
+    songs.unshift(next);
     curIdx = -1;
-    playSongObj(0);
+    playSong(0);
     renderQueue();
     return;
   }
   const next = shuffle
     ? Math.floor(Math.random() * songs.length)
     : (curIdx + 1) % songs.length;
-  playSongObj(next);
+  playSong(next);
 }
+
 function prevSong() {
   if (audio.currentTime > 3) { audio.currentTime = 0; return; }
-  playSongObj((curIdx - 1 + songs.length) % songs.length);
+  if (!songs.length) return;
+  playSong((curIdx - 1 + songs.length) % songs.length);
 }
 
-audio.addEventListener("ended", () => { if (!repeat) nextSong(); });
-
-audio.addEventListener("pause", () => stopVisualizer());
+audio.addEventListener("ended", () => { if (repeat) { audio.play(); } else nextSong(); });
 
 function toggleShuffle() {
   shuffle = !shuffle;
-  document.getElementById("shuffleBtn").classList.toggle("active", shuffle);
+  document.getElementById("shuffleBtn")?.classList.toggle("active", shuffle);
+  document.getElementById("mpsShuffleBtn")?.classList.toggle("active", shuffle);
   showToast(shuffle ? "🔀 Shuffle on" : "Shuffle off");
 }
+
 function toggleRepeat() {
   repeat = !repeat; audio.loop = repeat;
-  document.getElementById("repeatBtn").classList.toggle("active", repeat);
+  document.getElementById("repeatBtn")?.classList.toggle("active", repeat);
+  document.getElementById("mpsRepeatBtn")?.classList.toggle("active", repeat);
   showToast(repeat ? "🔁 Repeat on" : "Repeat off");
 }
+
 function toggleMute() {
-  muted = !muted; audio.volume = muted ? 0 : lastVol;
-  document.getElementById("muteBtn").innerHTML =
-    `<i class="fas fa-volume-${muted ? "xmark" : "high"}"></i>`;
+  muted = !muted;
+  audio.volume = muted ? 0 : lastVol;
+  const icon = muted ? "xmark" : "high";
+  document.getElementById("muteBtn").innerHTML = `<i class="fas fa-volume-${icon}"></i>`;
   document.getElementById("volFill").style.width = (muted ? 0 : lastVol * 100) + "%";
 }
 
-// ── PROGRESS ──────────────────────────────
+// ── PROGRESS ──────────────────────────────────────────
 audio.addEventListener("timeupdate", () => {
   if (!audio.duration) return;
   const pct = (audio.currentTime / audio.duration) * 100;
-  document.getElementById("progFill").style.width   = pct + "%";
-  document.getElementById("progDot").style.left     = pct + "%";
-  document.getElementById("curTime").textContent    = fmt(audio.currentTime);
-  document.getElementById("durTime").textContent    = fmt(audio.duration);
+
+  // Desktop progress
+  const pf  = document.getElementById("progFill");
+  const pd  = document.getElementById("progDot");
+  const ct  = document.getElementById("curTime");
+  const dt  = document.getElementById("durTime");
+  if (pf) pf.style.width = pct + "%";
+  if (pd) pd.style.left  = pct + "%";
+  if (ct) ct.textContent = fmt(audio.currentTime);
+  if (dt) dt.textContent = fmt(audio.duration);
+
+  // Mobile progress
+  const mpf = document.getElementById("mpsProgFill");
+  const mct = document.getElementById("mpsCurTime");
+  const mdt = document.getElementById("mpsDurTime");
+  if (mpf) mpf.style.width = pct + "%";
+  if (mct) mct.textContent = fmt(audio.currentTime);
+  if (mdt) mdt.textContent = fmt(audio.duration);
 });
+
 function seekTo(e) {
-  const rect = document.getElementById("progTrack").getBoundingClientRect();
-  audio.currentTime = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * audio.duration;
+  const track = e.currentTarget;
+  const rect  = track.getBoundingClientRect();
+  const pct   = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  if (audio.duration) audio.currentTime = pct * audio.duration;
 }
+
 function setVol(e) {
-  const rect = document.getElementById("volFill").parentElement.getBoundingClientRect();
+  const rect = e.currentTarget.getBoundingClientRect();
   const vol  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
   audio.volume = vol; lastVol = vol; muted = false;
   document.getElementById("volFill").style.width = vol * 100 + "%";
-  document.getElementById("muteBtn").innerHTML   = `<i class="fas fa-volume-high"></i>`;
+  document.getElementById("muteBtn").innerHTML = `<i class="fas fa-volume-high"></i>`;
 }
 
-// ── LIKE ──────────────────────────────────
+// ── LIKE ──────────────────────────────────────────────
 function isLiked(id) { return likedSongs.some(l => l.id == id); }
 function saveLiked() { localStorage.setItem("tf_liked", JSON.stringify(likedSongs)); }
 
+function updateLikeBtn() {
+  if (curIdx === -1 || !songs[curIdx]) return;
+  const liked = isLiked(songs[curIdx].id);
+  const lb  = document.getElementById("likeBtn");
+  const mlb = document.getElementById("mpsLikeBtn");
+  if (lb)  { lb.className  = `cbtn sm ${liked ? "active fas" : "far"} fa-heart`; lb.innerHTML  = `<i class="${liked ? "fas" : "far"} fa-heart"></i>`; }
+  if (mlb) { mlb.innerHTML = `<i class="${liked ? "fas" : "far"} fa-heart"></i>`; mlb.classList.toggle("liked", liked); }
+}
+
 function toggleLike() {
   if (curIdx === -1 || !songs[curIdx]) return;
-  toggleSongLike(songs[curIdx].id, curIdx, "songList");
+  const song = songs[curIdx];
+  const idx  = likedSongs.findIndex(l => l.id == song.id);
+  if (idx >= 0) { likedSongs.splice(idx, 1); showToast("Removed from Liked Songs"); }
+  else          { likedSongs.push({ id: song.id, track: song }); showToast("❤️ Added to Liked Songs"); }
+  saveLiked();
+  updateLikeBtn();
+  renderSongList(songs);
+  updateLikedCount();
+  if (currentSection === "library") renderLibrary();
 }
-function toggleSongLike(trackId, idx, containerId = "songList") {
-  let sourceList = songs;
-  if (containerId === "searchResults") sourceList = window._searchSongs || songs;
-  if (containerId === "myMusicList")   sourceList = myMusic;
 
-  const song  = sourceList[idx];
+function toggleSongLike(trackId, idx) {
+  const song  = songs[idx];
   const exist = likedSongs.findIndex(l => l.id == trackId);
   if (exist >= 0) { likedSongs.splice(exist, 1); showToast("Removed from Liked Songs"); }
   else            { likedSongs.push({ id: trackId, track: song }); showToast("❤️ Added to Liked Songs"); }
   saveLiked(); updateLikedCount();
-
-  renderSongs(sourceList, containerId);
+  renderSongList(songs);
+  if (idx === curIdx) updateLikeBtn();
   if (currentSection === "library") renderLibrary();
-  if (idx === curIdx) {
-    const liked = isLiked(trackId);
-    const lb = document.getElementById("likeBtn");
-    lb.className = `like-btn ${liked ? "liked" : ""}`;
-    lb.innerHTML = `<i class="${liked ? "fas" : "far"} fa-heart"></i>`;
-  }
 }
+
 function updateLikedCount() {
   const c = likedSongs.length;
-  document.getElementById("likedCount").textContent = `${c} song${c !== 1 ? "s" : ""} liked`;
+  const el = document.getElementById("likedCount");
+  if (el) el.textContent = `${c} song${c !== 1 ? "s" : ""} liked`;
 }
 
-// ── QUEUE ─────────────────────────────────
-function addToQueue(idx, containerId = "songList") {
-  let sourceList = songs;
-  if (containerId === "searchResults") sourceList = window._searchSongs || songs;
-  if (containerId === "myMusicList")   sourceList = myMusic;
-  const song = sourceList[idx];
+// ── QUEUE ─────────────────────────────────────────────
+function addToQueue(idx, list) {
+  const src  = list || songs;
+  const song = src[idx];
   if (!song) return;
   queue.push(song);
   renderQueue();
-  showToast(`➕ Added "${song.name || song.title}" to queue`);
+  showToast(`➕ "${song.name || song.title}" added to queue`);
 }
 
-function removeFromQueue(i) {
-  queue.splice(i, 1);
-  renderQueue();
-}
-
-function clearQueue() {
-  queue = [];
-  renderQueue();
-  showToast("Queue cleared");
-}
+function removeFromQueue(i) { queue.splice(i, 1); renderQueue(); }
+function clearQueue()       { queue = []; renderQueue(); showToast("Queue cleared"); }
 
 function renderQueue() {
-  const el = document.getElementById("queueList");
+  const el    = document.getElementById("queueList");
+  const badge = document.getElementById("queueCount");
   if (!el) return;
-  document.getElementById("queueCount").textContent = queue.length ? `${queue.length} songs` : "";
+  if (badge) badge.textContent = queue.length ? `${queue.length}` : "";
 
   if (!queue.length) {
-    el.innerHTML = `<div class="panel-empty"><i class="fas fa-list"></i><p>Queue is empty</p><span>Hit + on any song</span></div>`;
+    el.innerHTML = `<div class="panel-empty"><i class="fas fa-list-ul"></i><p>Queue is empty</p></div>`;
     return;
   }
   el.innerHTML = queue.map((s, i) => {
     const cover = s.album_image || s.cover || "";
     return `
-    <div class="queue-item">
-      <div class="queue-art">${cover ? `<img src="${cover}"/>` : "🎵"}</div>
+    <div class="queue-item" onclick="playSong(0, queue.splice(${i}).concat(songs))">
+      <div class="queue-art">${cover ? `<img src="${cover}"/>` : `<i class="fas fa-music"></i>`}</div>
       <div class="queue-info">
         <p class="queue-title">${s.name || s.title}</p>
         <p class="queue-artist">${s.artist_name || s.artist}</p>
       </div>
-      <button onclick="removeFromQueue(${i})" class="queue-remove"><i class="fas fa-times"></i></button>
+      <button class="queue-remove" onclick="event.stopPropagation();removeFromQueue(${i})">
+        <i class="fas fa-times"></i>
+      </button>
     </div>`;
   }).join("");
 }
 
-// ── RECENTLY PLAYED ───────────────────────
+// ── RECENTLY PLAYED ───────────────────────────────────
 function addToRecent(song) {
-  // Remove if already exists
   recentlyPlayed = recentlyPlayed.filter(r => r.id != song.id);
   recentlyPlayed.unshift({ id: song.id, track: song, time: Date.now() });
   if (recentlyPlayed.length > 20) recentlyPlayed.pop();
@@ -419,167 +413,187 @@ function addToRecent(song) {
 function renderRecent() {
   const el = document.getElementById("recentList");
   if (!el) return;
-
   if (!recentlyPlayed.length) {
-    el.innerHTML = `<div class="panel-empty"><i class="fas fa-clock"></i><p>Nothing yet</p><span>Play some songs!</span></div>`;
+    el.innerHTML = `<div class="panel-empty"><i class="fas fa-clock"></i><p>Nothing yet</p></div>`;
     return;
   }
-
   el.innerHTML = recentlyPlayed.map((r, i) => {
     const s = r.track;
     const cover = s.album_image || s.cover || "";
-    const timeAgo = getTimeAgo(r.time);
     return `
-    <div class="queue-item" onclick="songs=[${JSON.stringify(s).replace(/"/g,'&quot;')}]; playSongObj(0, 'recentList')" style="cursor:pointer">
-      <div class="queue-art">${cover ? `<img src="${cover}"/>` : "🎵"}</div>
+    <div class="queue-item" onclick="playSong(0, [${JSON.stringify(s).replace(/"/g, "&quot;")}])">
+      <div class="queue-art">${cover ? `<img src="${cover}"/>` : `<i class="fas fa-music"></i>`}</div>
       <div class="queue-info">
         <p class="queue-title">${s.name || s.title}</p>
-        <p class="queue-artist">${s.artist_name || s.artist} • ${timeAgo}</p>
+        <p class="queue-artist">${s.artist_name || s.artist} · ${getTimeAgo(r.time)}</p>
       </div>
     </div>`;
   }).join("");
 }
 
 function getTimeAgo(ts) {
-  const diff = Date.now() - ts;
-  if (diff < 60000)    return "just now";
-  if (diff < 3600000)  return Math.floor(diff/60000) + "m ago";
-  if (diff < 86400000) return Math.floor(diff/3600000) + "h ago";
-  return Math.floor(diff/86400000) + "d ago";
+  const d = Date.now() - ts;
+  if (d < 60000)    return "just now";
+  if (d < 3600000)  return Math.floor(d/60000) + "m ago";
+  if (d < 86400000) return Math.floor(d/3600000) + "h ago";
+  return Math.floor(d/86400000) + "d ago";
 }
 
-// ── AUDIO VISUALIZER ─────────────────────
-function setupVisualizer() {
-  const canvas = document.getElementById("visualizer-canvas");
-  if (!canvas) return;
+// ── NOW PLAYING NOTIFICATION ──────────────────────────
+function showNowPlayingNotif(title, artist, cover) {
+  const n = document.getElementById("nowNotif");
+  if (!n) return;
+  const artEl  = n.querySelector("#notifArt");
+  const titleEl  = n.querySelector("#notifTitle");
+  const artistEl = n.querySelector("#notifArtist");
+  if (artEl)   artEl.innerHTML = cover ? `<img src="${cover}" style="width:100%;height:100%;object-fit:cover;border-radius:6px"/>` : `<i class="fas fa-music"></i>`;
+  if (titleEl)  titleEl.textContent  = title;
+  if (artistEl) artistEl.textContent = artist;
+  n.classList.add("show");
+  clearTimeout(n._t);
+  n._t = setTimeout(() => n.classList.remove("show"), 3000);
 }
 
-
-function startVisualizer() {
-  const canvas = document.getElementById("visualizer-canvas");
-  if (!canvas) return;
-
-  // Only init AudioContext once, and only after user interaction
-  try {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (!analyser) {
-      analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 256;
-    }
-    if (!source) {
-      source = audioCtx.createMediaElementSource(audio);
-      source.connect(analyser);
-      analyser.connect(audioCtx.destination); // Must connect to speakers!
-    }
-    if (audioCtx.state === "suspended") audioCtx.resume();
-    vizActive = true;
-    drawVisualizer();
-  } catch(e) {
-    // Visualizer failed — but audio still works fine, just skip viz
-    console.warn("Visualizer skipped:", e.message);
-    vizActive = false;
+// ── LIBRARY ───────────────────────────────────────────
+function renderLibrary() {
+  const el = document.getElementById("likedList");
+  if (!el) return;
+  if (!likedSongs.length) {
+    el.innerHTML = `<div class="empty-state"><i class="fas fa-heart"></i><p>No liked songs yet</p><span>Hit ♥ on any song</span></div>`;
+    return;
   }
+  const list = likedSongs.map(l => l.track);
+  el.innerHTML = `
+    <div class="tbl-head" style="padding:5px 0 8px">
+      <span>#</span><span>Title</span>
+      <span style="text-align:right"><i class="fas fa-clock" style="font-size:0.65rem"></i></span>
+      <span></span>
+    </div>` +
+    list.map((song, i) => {
+      const cover = song.album_image || song.cover || "";
+      const liked = true;
+      return `
+      <div class="srow" onclick="playSong(${i}, list)" style="grid-template-columns:30px 1fr 56px 34px">
+        <span class="srow-n">${i+1}</span>
+        <div class="srow-info">
+          <p class="srow-name">${song.name || song.title}</p>
+          <p class="srow-artist">${song.artist_name || song.artist}</p>
+        </div>
+        <span class="srow-dur">${fmt(song.duration)}</span>
+        <button class="srow-like liked fas fa-heart"
+                onclick="event.stopPropagation();likedSongs.splice(${i},1);saveLiked();renderLibrary();updateLikedCount()"></button>
+      </div>`;
+    }).join("");
+  // expose list for playSong
+  window._likedList = list;
+  // Fix onclick now that we have the list reference
+  el.querySelectorAll(".srow").forEach((row, i) => {
+    row.onclick = () => playSong(i, window._likedList);
+  });
 }
 
-function stopVisualizer() {
-  vizActive = false;
-  cancelAnimationFrame(animFrame);
-  const canvas = document.getElementById("visualizer-canvas");
-  if (canvas) {
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+// ── SEARCH ────────────────────────────────────────────
+function bindSearch() {
+  const input    = document.getElementById("searchInput");
+  const clearBtn = document.getElementById("searchClear");
+  if (!input) return;
+  input.addEventListener("input", e => {
+    const q = e.target.value.trim();
+    if (clearBtn) clearBtn.style.display = q ? "block" : "none";
+    clearTimeout(searchTimer);
+    if (!q) { showSection("home"); return; }
+    showSection("search");
+    document.getElementById("searchResults").innerHTML =
+      `<div class="loading-state"><div class="spinner"></div><p>Searching Jamendo…</p></div>`;
+    searchTimer = setTimeout(() => doSearch(q), 480);
+  });
+  input.addEventListener("keydown", e => { if (e.key === "Escape") clearSearch(); });
+}
+
+async function doSearch(query) {
+  const tracks = await fetchTracks({ namesearch: query, orderby: "popularity_total" });
+  const el     = document.getElementById("searchResults");
+  if (!tracks.length) {
+    el.innerHTML = `<div class="empty-state"><i class="fas fa-search"></i><p>No results for "${query}"</p></div>`;
+    return;
   }
+  window._searchSongs = tracks;
+  el.innerHTML = `
+    <p style="font-family:'Geist Mono',monospace;font-size:0.6rem;letter-spacing:1.8px;text-transform:uppercase;color:var(--sub);margin-bottom:14px">
+      ${tracks.length} results from Jamendo
+    </p>
+    <div class="tbl-head" style="padding:5px 0 8px">
+      <span>#</span><span>Title</span>
+      <span style="text-align:right"><i class="fas fa-clock" style="font-size:0.65rem"></i></span>
+      <span></span>
+    </div>` +
+    tracks.map((song, i) => {
+      const liked = isLiked(song.id);
+      return `
+      <div class="srow" style="grid-template-columns:30px 1fr 56px 34px">
+        <span class="srow-n">${i+1}</span>
+        <div class="srow-info">
+          <p class="srow-name">${song.name}</p>
+          <p class="srow-artist">${song.artist_name}</p>
+        </div>
+        <span class="srow-dur">${fmt(song.duration)}</span>
+        <button class="srow-like ${liked ? "liked fas" : "far"} fa-heart"
+                onclick="event.stopPropagation();window._searchSongs&&toggleSearchLike('${song.id}',${i})"></button>
+      </div>`;
+    }).join("");
+  // Wire click
+  el.querySelectorAll(".srow").forEach((row, i) => {
+    row.addEventListener("click", () => playSong(i, window._searchSongs));
+  });
 }
 
-function drawVisualizer() {
-  if (!vizActive) return;
-  const canvas = document.getElementById("visualizer-canvas");
-  if (!canvas) return;
-
-  const ctx    = canvas.getContext("2d");
-  const W      = canvas.width;
-  const H      = canvas.height;
-  const bufLen = analyser.frequencyBinCount;
-  const data   = new Uint8Array(bufLen);
-
-  analyser.getByteFrequencyData(data);
-  ctx.clearRect(0, 0, W, H);
-
-  const accent = getComputedStyle(document.documentElement).getPropertyValue("--purple").trim() || "#b94fff";
-  const barW   = W / bufLen * 2;
-  const gap    = 2;
-
-  for (let i = 0; i < bufLen; i++) {
-    const barH  = (data[i] / 255) * H * 0.9;
-    const x     = i * (barW + gap);
-    const alpha = 0.5 + (data[i] / 255) * 0.5;
-
-    const grad = ctx.createLinearGradient(0, H, 0, H - barH);
-    grad.addColorStop(0, accent + "44");
-    grad.addColorStop(1, accent);
-    ctx.fillStyle = grad;
-    ctx.globalAlpha = alpha;
-
-    const radius = Math.min(barW / 2, 3);
-    ctx.beginPath();
-    ctx.roundRect(x, H - barH, barW, barH, [radius, radius, 0, 0]);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-  animFrame = requestAnimationFrame(drawVisualizer);
+function toggleSearchLike(trackId, idx) {
+  const song  = (window._searchSongs || [])[idx];
+  if (!song) return;
+  const exist = likedSongs.findIndex(l => l.id == trackId);
+  if (exist >= 0) { likedSongs.splice(exist, 1); showToast("Removed from Liked Songs"); }
+  else            { likedSongs.push({ id: trackId, track: song }); showToast("❤️ Added to Liked Songs"); }
+  saveLiked(); updateLikedCount();
+  doSearch(document.getElementById("searchInput").value);
 }
 
-// ── MY OWN MUSIC UPLOAD ───────────────────
+function clearSearch() {
+  const input = document.getElementById("searchInput");
+  const clearBtn = document.getElementById("searchClear");
+  if (input) input.value = "";
+  if (clearBtn) clearBtn.style.display = "none";
+  window._searchSongs = [];
+  showSection("home");
+}
+
+// ── UPLOAD / MY MUSIC ─────────────────────────────────
 function setupUpload() {
   const input = document.getElementById("musicUpload");
   if (!input) return;
-
-  input.addEventListener("change", async (e) => {
+  input.addEventListener("change", async e => {
     const files = Array.from(e.target.files);
     for (const file of files) {
       if (!file.type.startsWith("audio/")) continue;
-
-      const url  = URL.createObjectURL(file);
-      const name = file.name.replace(/\.[^.]+$/, "");
-      const parts = name.split(" - ");
-      const title  = parts.length > 1 ? parts[1].trim() : name;
+      const url   = URL.createObjectURL(file);
+      const raw   = file.name.replace(/\.[^.]+$/, "");
+      const parts = raw.split(" - ");
+      const title  = parts.length > 1 ? parts[1].trim() : raw;
       const artist = parts.length > 1 ? parts[0].trim() : "My Music";
-
-      // Get duration
-      const dur = await getAudioDuration(url);
-
-      const track = {
-        id:         "local_" + Date.now() + Math.random(),
-        name:       title,
-        title:      title,
-        artist_name: artist,
-        artist:     artist,
-        album_name: "My Uploads",
-        album:      "My Uploads",
-        audio:      url,
-        src:        url,
-        cover:      "",
-        album_image: "",
-        duration:   Math.floor(dur),
-        durationStr: fmtSec(Math.floor(dur)),
-        _isLocal:   true,
-        _color:     "#b94fff",
+      const dur    = await getAudioDuration(url);
+      const track  = {
+        id: "local_" + Date.now() + Math.random(),
+        name: title, title,
+        artist_name: artist, artist,
+        album_name: "My Uploads", album: "My Uploads",
+        audio: url, src: url,
+        cover: "", album_image: "",
+        duration: Math.floor(dur),
+        _isLocal: true,
       };
-
-      // Avoid duplicates by name
-      if (!myMusic.some(m => m.name === track.name)) {
-        myMusic.push(track);
-      }
+      if (!myMusic.some(m => m.name === track.name)) myMusic.push(track);
     }
-
-    // Save to localStorage (without blob URLs — they don't persist)
-    const saveable = myMusic.filter(m => !m._isLocal).map(m => m);
-    localStorage.setItem("tf_mymusic", JSON.stringify(saveable));
-
     renderMyMusic();
-    showToast(`✅ ${files.length} song${files.length>1?"s":""} uploaded!`);
+    showToast(`✅ ${files.length} song${files.length > 1 ? "s" : ""} uploaded!`);
     input.value = "";
   });
 }
@@ -595,18 +609,16 @@ function getAudioDuration(url) {
 function renderMyMusic() {
   const el = document.getElementById("myMusicList");
   if (!el) return;
-
   if (!myMusic.length) {
     el.innerHTML = `
       <div class="upload-prompt">
         <label for="musicUpload" class="upload-btn">
-          <i class="fas fa-cloud-arrow-up"></i> Upload Your Music
+          <i class="fas fa-cloud-arrow-up"></i> Upload Music
         </label>
-        <p>Supports MP3, WAV, OGG • Name files as "Artist - Title.mp3" for best results</p>
+        <p>Supports MP3, WAV, OGG — name as <strong>Artist - Title.mp3</strong></p>
       </div>`;
     return;
   }
-
   el.innerHTML = `
     <div class="upload-bar">
       <label for="musicUpload" class="upload-btn-small">
@@ -616,325 +628,188 @@ function renderMyMusic() {
         <i class="fas fa-trash"></i> Clear All
       </button>
     </div>
-    <div class="song-table-header">
-      <span>#</span><span>TITLE</span><span>ARTIST</span>
-      <span><i class="fas fa-clock"></i></span><span></span>
+    <div class="tbl-head" style="padding:5px 0 8px">
+      <span>#</span><span>Title</span>
+      <span style="text-align:right"><i class="fas fa-clock" style="font-size:0.65rem"></i></span>
+      <span></span>
     </div>` +
     myMusic.map((song, i) => `
-    <div class="song-row" onclick="songs=myMusic; playSongObj(${i}, 'myMusicList')">
-      <div class="song-num-wrap">
-        <span class="row-num">${i+1}</span>
-        <div class="row-play-icon"><i class="fas fa-play"></i></div>
+    <div class="srow" style="grid-template-columns:30px 1fr 56px 34px">
+      <span class="srow-n">${i+1}</span>
+      <div class="srow-info">
+        <p class="srow-name">${song.name}</p>
+        <p class="srow-artist">${song.artist_name}</p>
       </div>
-      <div class="song-title-cell">
-        <div class="song-cover-wrap">
-          <div class="song-cover-fallback">🎵</div>
-        </div>
-        <div>
-          <div class="song-name">${song.name}</div>
-          <div class="song-album">My Uploads</div>
-        </div>
-      </div>
-      <div class="song-artist-cell">${song.artist_name}</div>
-      <div class="song-dur">${song.durationStr || "—"}</div>
-      <div style="display:flex;gap:4px">
-        <button class="song-like-btn" onclick="event.stopPropagation();addToQueue(${i},'myMusicList')">
-          <i class="fas fa-plus"></i>
-        </button>
-        <button class="song-like-btn" style="color:#ff6b6b;opacity:1"
-                onclick="event.stopPropagation();removeMyTrack(${i})">
-          <i class="fas fa-trash"></i>
-        </button>
-      </div>
+      <span class="srow-dur">${fmt(song.duration)}</span>
+      <button class="srow-like far fa-trash"
+              onclick="event.stopPropagation();removeMyTrack(${i})"
+              style="font-size:0.68rem;color:#e06c6c;opacity:0.7"></button>
     </div>`).join("");
-}
 
-function removeMyTrack(i) {
-  myMusic.splice(i, 1);
-  renderMyMusic();
-  showToast("Removed from My Music");
-}
-function clearMyMusic() {
-  myMusic = [];
-  localStorage.removeItem("tf_mymusic");
-  renderMyMusic();
-  showToast("My Music cleared");
-}
-
-// ── LIBRARY ───────────────────────────────
-function renderLibrary() {
-  const el = document.getElementById("likedList");
-  if (!el) return;
-  if (!likedSongs.length) {
-    el.innerHTML = `<div class="empty-library"><div class="empty-icon">💜</div><p>No liked songs yet</p><span>Hit the ♥ on any song</span></div>`;
-    return;
-  }
-  const list = likedSongs.map(l => l.track);
-  el.innerHTML = `
-    <div class="song-table-header">
-      <span>#</span><span>TITLE</span><span>ARTIST</span>
-      <span><i class="fas fa-clock"></i></span><span></span>
-    </div>` +
-    list.map((song, i) => {
-      const cover = song.album_image || song.cover || "";
-      return `
-      <div class="song-row" onclick="songs=window._likedTracks||[]; curIdx=${i}; playSongObj(${i},'likedList')">
-        <div class="song-num-wrap"><span class="row-num">${i+1}</span>
-          <div class="row-play-icon"><i class="fas fa-play"></i></div></div>
-        <div class="song-title-cell">
-          <div class="song-cover-wrap">
-            ${cover ? `<img src="${cover}" class="song-cover-img"/>` : `<div class="song-cover-fallback">🎵</div>`}
-          </div>
-          <div><div class="song-name">${song.name||song.title}</div>
-          <div class="song-album">${song.album_name||""}</div></div>
-        </div>
-        <div class="song-artist-cell">${song.artist_name||song.artist}</div>
-        <div class="song-dur">${fmtSec(song.duration)}</div>
-        <button class="song-like-btn liked"
-                onclick="event.stopPropagation();likedSongs.splice(${i},1);saveLiked();renderLibrary();updateLikedCount()">
-          <i class="fas fa-heart"></i></button>
-      </div>`;
-    }).join("");
-  window._likedTracks = list;
-}
-
-// ── SEARCH ────────────────────────────────
-function bindSearch() {
-  const input = document.getElementById("searchInput");
-  const clearBtn = document.getElementById("searchClear");
-
-  input.addEventListener("input", e => {
-    const q = e.target.value.trim();
-    clearBtn.classList.toggle("visible", q.length > 0);
-    clearTimeout(searchTimer);
-    if (!q) { showSection("home"); return; }
-    showSection("search");
-    document.getElementById("searchResults").innerHTML =
-      `<div class="loading-state"><div class="spinner"></div><p>Searching Jamendo...</p></div>`;
-    searchTimer = setTimeout(() => doSearch(q), 500);
+  el.querySelectorAll(".srow").forEach((row, i) => {
+    row.addEventListener("click", () => playSong(i, myMusic));
   });
-  input.addEventListener("keydown", e => { if (e.key === "Escape") clearSearch(); });
 }
 
-async function doSearch(query) {
-  const tracks = await fetchTracks({ namesearch: query, orderby: "popularity_total" });
-  window._searchSongs = tracks;
-  const el = document.getElementById("searchResults");
-  if (!tracks.length) {
-    el.innerHTML = `<div class="search-empty"><div style="font-size:2.5rem;margin-bottom:12px">🔍</div><p>No results for "<strong>${query}</strong>"</p></div>`;
-    return;
-  }
-  el.innerHTML = `<div class="search-tag">${tracks.length} RESULTS FROM JAMENDO</div>
-    <div class="song-table-header"><span>#</span><span>TITLE</span><span>ARTIST</span><span><i class="fas fa-clock"></i></span><span></span></div>` +
-    tracks.map((song, i) => {
-      const liked = isLiked(song.id);
-      return `
-      <div class="song-row" onclick="songs=window._searchSongs; playSongObj(${i},'searchResults')">
-        <div class="song-num-wrap"><span class="row-num">${i+1}</span>
-          <div class="row-play-icon"><i class="fas fa-play"></i></div></div>
-        <div class="song-title-cell">
-          <div class="song-cover-wrap">
-            ${song.album_image ? `<img src="${song.album_image}" class="song-cover-img"/>` : `<div class="song-cover-fallback">🎵</div>`}
-          </div>
-          <div><div class="song-name">${song.name}</div><div class="song-album">${song.album_name||""}</div></div>
-        </div>
-        <div class="song-artist-cell">${song.artist_name}</div>
-        <div class="song-dur">${fmtSec(song.duration)}</div>
-        <div style="display:flex;gap:4px">
-          <button class="song-like-btn ${liked?"liked":""}"
-                  onclick="event.stopPropagation();songs=window._searchSongs;toggleSongLike('${song.id}',${i},'searchResults')">
-            <i class="${liked?"fas":"far"} fa-heart"></i></button>
-          <button class="song-like-btn" onclick="event.stopPropagation();songs=window._searchSongs;addToQueue(${i},'searchResults')">
-            <i class="fas fa-plus"></i></button>
-        </div>
-      </div>`;
-    }).join("");
-}
+function removeMyTrack(i) { myMusic.splice(i, 1); renderMyMusic(); showToast("Removed"); }
+function clearMyMusic()   { myMusic = []; localStorage.removeItem("tf_mymusic"); renderMyMusic(); showToast("My Music cleared"); }
 
-function clearSearch() {
-  document.getElementById("searchInput").value = "";
-  document.getElementById("searchClear").classList.remove("visible");
-  window._searchSongs = [];
-  showSection("home");
-}
-
-// ── GENRE CARDS ───────────────────────────
-function renderGenreCards() {
-  document.getElementById("genreCards").innerHTML = genres.map(g => `
-    <div class="pl-card" onclick="loadGenre('${g.id}', null)">
-      <div class="pl-card-art" style="background:${g.color}22;font-size:3rem">${g.emoji}</div>
-      <div class="pl-card-name">${g.label}</div>
-      <div class="pl-card-count">Powered by Jamendo</div>
-    </div>`).join("");
-}
-
-// ── PANELS (queue / recent) ───────────────
-function togglePanel(name) {
-  const panel = document.getElementById(`panel-${name}`);
-  const isOpen = panel.classList.contains("open");
-  document.querySelectorAll(".side-panel").forEach(p => p.classList.remove("open"));
-  if (!isOpen) panel.classList.add("open");
-}
-
-// ── SECTION SWITCH ────────────────────────
+// ── SECTION SWITCH ────────────────────────────────────
 function showSection(name) {
   currentSection = name;
+  // desktop tabs
   ["home","search","library","mymusic"].forEach(s => {
-    const el = document.getElementById(`section-${s}`);
-    if (el) el.style.display = s === name ? "block" : "none";
-  });
-  ["nav-home","nav-search","nav-library","nav-mymusic"].forEach((id, i) => {
-    const el = document.getElementById(id);
-    if (el) el.classList.toggle("active", ["home","search","library","mymusic"][i] === name);
+    const el  = document.getElementById(`section-${s}`);
+    const tab = document.getElementById(`nav-${s}`);
+    const msb = document.getElementById(`msb-${s}`);
+    if (el) el.style.display = s === name ? (s === "home" ? "flex" : "block") : "none";
+    if (tab) tab.classList.toggle("active", s === name);
+    if (msb) msb.classList.toggle("active", s === name);
   });
   if (name === "library") { renderLibrary(); updateLikedCount(); }
   if (name === "mymusic") renderMyMusic();
 }
 
-// ── UTILS ─────────────────────────────────
-function showLoading() {
-  document.getElementById("songList").innerHTML =
-    `<div class="loading-state"><div class="spinner"></div><p>Loading from Jamendo...</p></div>`;
-}
-function fmt(s) {
-  if (isNaN(s)) return "0:00";
-  return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,"0")}`;
-}
-function fmtSec(s) {
-  if (!s) return "—";
-  return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,"0")}`;
+// ── PANELS ────────────────────────────────────────────
+function togglePanel(name) {
+  const panel  = document.getElementById(`panel-${name}`);
+  const isOpen = panel.classList.contains("open");
+  document.querySelectorAll(".side-panel").forEach(p => p.classList.remove("open"));
+  if (!isOpen) panel.classList.add("open");
 }
 
-let toastTimer;
-function showToast(msg) {
-  let t = document.getElementById("toast");
-  if (!t) {
-    t = document.createElement("div"); t.id = "toast";
-    t.style.cssText = `position:fixed;bottom:110px;left:50%;transform:translateX(-50%);
-      background:#1a1a1a;border:1px solid rgba(255,255,255,0.08);color:#e8e8e8;
-      padding:10px 22px;border-radius:50px;font-size:0.82rem;z-index:9999;
-      transition:opacity 0.3s;font-family:'Inter',sans-serif;letter-spacing:-0.2px;
-      white-space:nowrap;box-shadow:0 8px 28px rgba(0,0,0,0.5);`;
-    document.body.appendChild(t);
+// ── MOBILE SIDEBAR ────────────────────────────────────
+function openMobileSidebar() {
+  document.getElementById("mobileSidebar")?.classList.add("open");
+  document.getElementById("sidebarOverlay")?.classList.add("open");
+}
+function closeMobileSidebar() {
+  document.getElementById("mobileSidebar")?.classList.remove("open");
+  document.getElementById("sidebarOverlay")?.classList.remove("open");
+}
+// Fix: show overlay properly
+document.addEventListener("DOMContentLoaded", () => {});
+
+// ── MOBILE PLAYER SHEET ───────────────────────────────
+function openMobilePlayer() {
+  document.getElementById("mobilePlayerSheet")?.classList.add("open");
+  if (songs[curIdx]) syncMobileUI(songs[curIdx]);
+}
+function closeMobilePlayer() {
+  document.getElementById("mobilePlayerSheet")?.classList.remove("open");
+}
+
+function syncMobileUI(song) {
+  if (!song) return;
+  const name   = song.name || song.title || "Unknown";
+  const artist = song.artist_name || song.artist || "Unknown";
+  const cover  = song.album_image || song.cover || "";
+
+  // Sheet
+  const mpsArt    = document.getElementById("mpsArt");
+  const mpsTitle  = document.getElementById("mpsTitle");
+  const mpsArtist = document.getElementById("mpsArtist");
+  if (mpsArt)    mpsArt.innerHTML = cover ? `<img src="${cover}" style="width:100%;height:100%;object-fit:cover;border-radius:16px"/>` : `<i class="fas fa-music"></i>`;
+  if (mpsTitle)  mpsTitle.textContent  = name;
+  if (mpsArtist) mpsArtist.textContent = artist;
+
+  // Mini player
+  const miniArt    = document.getElementById("miniArt");
+  const miniTitle  = document.getElementById("miniTitle");
+  const miniArtist = document.getElementById("miniArtist");
+  if (miniArt)    miniArt.innerHTML    = cover ? `<img src="${cover}" style="width:100%;height:100%;object-fit:cover;border-radius:8px"/>` : `<i class="fas fa-music"></i>`;
+  if (miniTitle)  miniTitle.textContent  = name;
+  if (miniArtist) miniArtist.textContent = artist;
+
+  setPlayIcons(playing ? "pause" : "play");
+  updateLikeBtn();
+
+  const msb = document.getElementById("mpsShuffleBtn");
+  const mrb = document.getElementById("mpsRepeatBtn");
+  if (msb) msb.classList.toggle("active", shuffle);
+  if (mrb) mrb.classList.toggle("active", repeat);
+}
+
+// Swipe down to close mobile sheet
+let _touchStartY = 0;
+document.addEventListener("touchstart", e => {
+  const sheet = document.getElementById("mobilePlayerSheet");
+  if (sheet?.classList.contains("open")) _touchStartY = e.touches[0].clientY;
+}, { passive: true });
+document.addEventListener("touchend", e => {
+  const sheet = document.getElementById("mobilePlayerSheet");
+  if (sheet?.classList.contains("open") && e.changedTouches[0].clientY - _touchStartY > 80) {
+    closeMobilePlayer();
   }
-  t.textContent = msg; t.style.opacity = "1";
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.style.opacity = "0"; }, 2500);
+}, { passive: true });
+
+// Vol in mobile sheet
+function setMpsVol(e) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const vol  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  audio.volume = vol; lastVol = vol; muted = false;
+  document.getElementById("mpsVolFill").style.width = vol * 100 + "%";
+  document.getElementById("volFill").style.width    = vol * 100 + "%";
 }
 
-
-// ── ⌨️ KEYBOARD SHORTCUTS ─────────────────
+// ── KEYBOARD SHORTCUTS ────────────────────────────────
 function setupKeyboard() {
   document.addEventListener("keydown", e => {
-    // Don't fire if user is typing in search
     if (e.target.tagName === "INPUT") return;
-
-    switch(e.code) {
+    switch (e.code) {
       case "Space":
-        e.preventDefault();
-        togglePlay();
-        break;
+        e.preventDefault(); togglePlay(); break;
       case "ArrowRight":
         if (e.shiftKey) { nextSong(); showToast("⏭ Next song"); }
-        else { audio.currentTime = Math.min(audio.duration, audio.currentTime + 10); showToast("⏩ +10s"); }
+        else { audio.currentTime = Math.min(audio.duration||0, audio.currentTime + 10); showToast("⏩ +10s"); }
         break;
       case "ArrowLeft":
-        if (e.shiftKey) { prevSong(); showToast("⏮ Previous song"); }
+        if (e.shiftKey) { prevSong(); showToast("⏮ Prev song"); }
         else { audio.currentTime = Math.max(0, audio.currentTime - 10); showToast("⏪ -10s"); }
         break;
       case "ArrowUp":
         e.preventDefault();
-        audio.volume = Math.min(1, audio.volume + 0.1);
-        lastVol = audio.volume;
-        document.getElementById("volFill").style.width = (audio.volume * 100) + "%";
-        showToast(`🔊 Volume ${Math.round(audio.volume * 100)}%`);
+        audio.volume = Math.min(1, audio.volume + 0.1); lastVol = audio.volume;
+        document.getElementById("volFill").style.width = audio.volume * 100 + "%";
+        showToast(`🔊 ${Math.round(audio.volume * 100)}%`);
         break;
       case "ArrowDown":
         e.preventDefault();
-        audio.volume = Math.max(0, audio.volume - 0.1);
-        lastVol = audio.volume;
-        document.getElementById("volFill").style.width = (audio.volume * 100) + "%";
-        showToast(`🔉 Volume ${Math.round(audio.volume * 100)}%`);
+        audio.volume = Math.max(0, audio.volume - 0.1); lastVol = audio.volume;
+        document.getElementById("volFill").style.width = audio.volume * 100 + "%";
+        showToast(`🔉 ${Math.round(audio.volume * 100)}%`);
         break;
-      case "KeyM":
-        toggleMute();
-        break;
-      case "KeyL":
-        toggleLike();
-        break;
-      case "KeyS":
-        toggleShuffle();
-        break;
-      case "KeyR":
-        toggleRepeat();
-        break;
+      case "KeyM": toggleMute(); break;
+      case "KeyL": toggleLike(); break;
+      case "KeyS": toggleShuffle(); break;
+      case "KeyR": toggleRepeat(); break;
     }
   });
 }
 
-// ── 😴 SLEEP TIMER ────────────────────────
-let sleepTimer = null;
-let sleepMins  = 0;
-let sleepInterval = null;
-
-function toggleSleepTimer() {
-  if (sleepTimer) {
-    clearTimeout(sleepTimer);
-    clearInterval(sleepInterval);
-    sleepTimer = null; sleepMins = 0;
-    updateSleepBtn();
-    showToast("😴 Sleep timer cancelled");
-    return;
-  }
-  // Cycle: 15 → 30 → 45 → 60 → off
-  const options = [15, 30, 45, 60];
-  sleepMins = options[(options.indexOf(sleepMins) + 1) % options.length] || 15;
-  // Actually set it
-  clearTimeout(sleepTimer);
-  clearInterval(sleepInterval);
-  let remaining = sleepMins * 60;
-  sleepTimer = setTimeout(() => {
-    audio.pause(); playing = false;
-    document.getElementById("playPauseBtn").innerHTML = `<i class="fas fa-play"></i>`;
-    document.getElementById("vinyl").classList.remove("playing");
-    sleepTimer = null;
-    updateSleepBtn();
-    showToast("😴 Sleep timer — music stopped");
-  }, sleepMins * 60 * 1000);
-  // Countdown in button
-  sleepInterval = setInterval(() => {
-    remaining--;
-    if (remaining <= 0) { clearInterval(sleepInterval); return; }
-    updateSleepBtn(remaining);
-  }, 1000);
-  updateSleepBtn(remaining);
-  showToast(`😴 Sleep timer: ${sleepMins} min`);
+function showKeyboardHelp() {
+  document.getElementById("kbModal")?.classList.add("open");
 }
 
+// ── SLEEP TIMER ───────────────────────────────────────
 function cycleSleepTimer() {
-  // If active, cancel first
   if (sleepTimer) {
-    clearTimeout(sleepTimer);
-    clearInterval(sleepInterval);
+    clearTimeout(sleepTimer); clearInterval(sleepInterval);
     sleepTimer = null; sleepMins = 0;
+    updateSleepBtn(); showToast("😴 Sleep timer off"); return;
   }
   const options = [15, 30, 45, 60];
   const next = options[(options.indexOf(sleepMins) + 1) % options.length];
   if (!next || sleepMins === 60) {
-    sleepMins = 0;
-    updateSleepBtn();
-    showToast("😴 Sleep timer off");
-    return;
+    sleepMins = 0; updateSleepBtn(); showToast("😴 Sleep timer off"); return;
   }
   sleepMins = next;
   let remaining = sleepMins * 60;
   sleepTimer = setTimeout(() => {
     audio.pause(); playing = false;
-    document.getElementById("playPauseBtn").innerHTML = `<i class="fas fa-play"></i>`;
-    document.getElementById("vinyl").classList.remove("playing");
+    setPlayIcons("play");
     sleepTimer = null; sleepMins = 0;
-    updateSleepBtn();
-    showToast("😴 Sleep timer — music stopped. Goodnight 🌙");
+    updateSleepBtn(); showToast("😴 Sleep timer — music stopped. Goodnight 🌙");
   }, sleepMins * 60 * 1000);
   sleepInterval = setInterval(() => {
     remaining--;
@@ -946,164 +821,91 @@ function cycleSleepTimer() {
 }
 
 function updateSleepBtn(remaining) {
-  const btn = document.getElementById("sleepBtn");
-  if (!btn) return;
-  if (!sleepTimer) {
-    btn.innerHTML = `<i class="fas fa-moon"></i>`;
-    btn.classList.remove("active");
-    btn.title = "Sleep Timer";
-  } else {
-    const m = Math.floor(remaining / 60);
-    const s = String(remaining % 60).padStart(2,"0");
-    btn.innerHTML = `<span class="sleep-countdown">${m}:${s}</span>`;
-    btn.classList.add("active");
-    btn.title = "Click to cancel";
-  }
+  const btns = [document.getElementById("sleepBtn"), document.getElementById("mpsSleepBtn")];
+  btns.forEach(btn => {
+    if (!btn) return;
+    if (!sleepTimer) {
+      btn.innerHTML = `<i class="fas fa-moon"></i>${btn.tagName !== "BUTTON" || btn.closest(".mps-extras") ? "<span>Sleep</span>" : ""}`;
+      btn.classList.remove("active");
+    } else {
+      const m = Math.floor(remaining / 60);
+      const s = String(remaining % 60).padStart(2, "0");
+      if (btn.closest(".mps-extras")) {
+        btn.innerHTML = `<i class="fas fa-moon"></i><span>${m}:${s}</span>`;
+      } else {
+        btn.innerHTML = `<span class="sleep-countdown">${m}:${s}</span>`;
+      }
+      btn.classList.add("active");
+    }
+  });
 }
 
-// ── 🎚️ CROSSFADE ──────────────────────────
-let crossfadeSecs = 3; // default 3s
-let crossfadeActive = false;
-let crossfadeTimer  = null;
-
+// ── CROSSFADE ─────────────────────────────────────────
 function setupCrossfade() {
   audio.addEventListener("timeupdate", () => {
     if (!audio.duration || crossfadeSecs === 0) return;
     const timeLeft = audio.duration - audio.currentTime;
     if (timeLeft <= crossfadeSecs && timeLeft > 0 && !crossfadeActive && playing) {
       crossfadeActive = true;
-      startCrossfade();
+      const steps = crossfadeSecs * 10;
+      let step = 0;
+      const origVol = audio.volume;
+      const fade = setInterval(() => {
+        step++;
+        audio.volume = Math.max(0, origVol * (1 - step / steps));
+        if (step >= steps) {
+          clearInterval(fade);
+          audio.volume = origVol;
+          crossfadeActive = false;
+        }
+      }, 100);
     }
     if (timeLeft > crossfadeSecs + 1) crossfadeActive = false;
   });
 }
 
-function startCrossfade() {
-  if (crossfadeSecs === 0) return;
-  const totalSteps = crossfadeSecs * 10; // 100ms intervals
-  let step = 0;
-  const originalVol = audio.volume;
-  const fadeOut = setInterval(() => {
-    step++;
-    audio.volume = Math.max(0, originalVol * (1 - step / totalSteps));
-    if (step >= totalSteps) {
-      clearInterval(fadeOut);
-      audio.volume = originalVol;
-      crossfadeActive = false;
-    }
-  }, 100);
+function loadCrossfadePref() {
+  document.querySelectorAll(".cf-opt").forEach(el => {
+    el.classList.toggle("active", parseInt(el.dataset.secs) === crossfadeSecs);
+  });
 }
 
 function setCrossfade(secs) {
   crossfadeSecs = secs;
-  document.querySelectorAll(".cf-option").forEach(el => {
+  document.querySelectorAll(".cf-opt").forEach(el => {
     el.classList.toggle("active", parseInt(el.dataset.secs) === secs);
   });
+  document.getElementById("crossfadeMenu")?.classList.remove("open");
   showToast(secs === 0 ? "Crossfade off" : `🎚️ Crossfade: ${secs}s`);
   localStorage.setItem("tf_crossfade", secs);
 }
 
 function toggleCrossfadeMenu() {
-  const menu = document.getElementById("crossfadeMenu");
-  if (!menu) return;
-  menu.classList.toggle("open");
+  document.getElementById("crossfadeMenu")?.classList.toggle("open");
 }
 
-function showKeyboardHelp() {
-  document.getElementById("kbModal").classList.add("open");
+// ── UTILS ─────────────────────────────────────────────
+function showLoading() {
+  const el = document.getElementById("songList");
+  if (el) el.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Loading from Jamendo…</p></div>`;
 }
 
-// ── START ─────────────────────────────────
-init();
-
-// ── 📱 MOBILE PLAYER SHEET ───────────────
-function openMobilePlayer() {
-  if (window.innerWidth > 768) return;
-  document.getElementById("mobilePlayerSheet").classList.add("open");
-  syncMobileSheet();
-}
-function closeMobilePlayer() {
-  document.getElementById("mobilePlayerSheet").classList.remove("open");
+function fmt(s) {
+  if (!s || isNaN(s)) return "0:00";
+  return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 }
 
-function syncMobileSheet() {
-  if (!songs[curIdx]) return;
-  const song = songs[curIdx];
-
-  // Art
-  const art = document.getElementById("mpsArt");
-  const cover = song.album_image || song.cover || "";
-  art.innerHTML = cover
-    ? '<img src="' + cover + '" style="width:100%;height:100%;object-fit:cover;border-radius:16px"/>'
-    : '<i class="fas fa-music"></i>';
-
-  // Title / artist
-  document.getElementById("mpsTitle").textContent  = song.name || song.title || "Unknown";
-  document.getElementById("mpsArtist").textContent = song.artist_name || song.artist || "";
-
-  // Like button
-  const lb = document.getElementById("mpsLikeBtn");
-  const liked = isLiked(song.id);
-  lb.innerHTML = '<i class="' + (liked ? "fas" : "far") + ' fa-heart"></i>';
-  lb.classList.toggle("liked", liked);
-
-  // Play button state
-  const mpsPlay = document.getElementById("mpsPlayBtn");
-  if (mpsPlay) mpsPlay.innerHTML = playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
-
-  // Shuffle / repeat state
-  const msb = document.getElementById("mpsShuffleBtn");
-  const mrb = document.getElementById("mpsRepeatBtn");
-  if (msb) msb.classList.toggle("active", shuffle);
-  if (mrb) mrb.classList.toggle("active", repeat);
+let _toastTimer;
+function showToast(msg) {
+  let t = document.getElementById("toast");
+  if (!t) {
+    t = document.createElement("div"); t.id = "toast";
+    document.body.appendChild(t);
+  }
+  t.textContent = msg; t.style.opacity = "1";
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { t.style.opacity = "0"; }, 2500);
 }
 
-// Keep mobile sheet progress in sync
-audio.addEventListener("timeupdate", function() {
-  if (!audio.duration) return;
-  const pct = (audio.currentTime / audio.duration) * 100;
-  const mf = document.getElementById("mpsProgFill");
-  const md = document.getElementById("mpsProgDot");
-  const ct = document.getElementById("mpsCurTime");
-  const dt = document.getElementById("mpsDurTime");
-  if (mf) mf.style.width = pct + "%";
-  if (md) md.style.left  = pct + "%";
-  if (ct) ct.textContent = fmt(audio.currentTime);
-  if (dt) dt.textContent = fmt(audio.duration);
-});
-
-// Volume slider in mobile sheet
-function setMpsVol(e) {
-  const rect = e.currentTarget.getBoundingClientRect();
-  const vol  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-  audio.volume = vol; lastVol = vol; muted = false;
-  const fill     = document.getElementById("mpsVolFill");
-  const mainFill = document.getElementById("volFill");
-  if (fill)     fill.style.width     = vol * 100 + "%";
-  if (mainFill) mainFill.style.width = vol * 100 + "%";
-}
-
-// Swipe down to close mobile sheet
-(function() {
-  var startY = 0;
-  document.addEventListener("touchstart", function(e) {
-    var sheet = document.getElementById("mobilePlayerSheet");
-    if (sheet && sheet.classList.contains("open")) startY = e.touches[0].clientY;
-  }, { passive: true });
-  document.addEventListener("touchend", function(e) {
-    var sheet = document.getElementById("mobilePlayerSheet");
-    if (sheet && sheet.classList.contains("open")) {
-      if (e.changedTouches[0].clientY - startY > 80) closeMobilePlayer();
-    }
-  }, { passive: true });
-})();
-
-// Sync sheet when a song starts playing
-var _origUpdatePlayerBar2 = updatePlayerBar;
-updatePlayerBar = function(song) {
-  _origUpdatePlayerBar2(song);
-  var sheet = document.getElementById("mobilePlayerSheet");
-  if (sheet && sheet.classList.contains("open")) syncMobileSheet();
-  var mpsPlay = document.getElementById("mpsPlayBtn");
-  if (mpsPlay) mpsPlay.innerHTML = '<i class="fas fa-pause"></i>';
-};
+// ── START ─────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", init);
