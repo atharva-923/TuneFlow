@@ -108,7 +108,8 @@ async function loadGenre(genreId) {
   curGenre = genreId;
   renderGenreChips();
   renderMobileSidebarGenres();
-  showSection("home");
+  // Only redirect to home if the user isn't already there
+  if (currentSection !== "home") showSection("home");
 
   // update now-pill
   const g = genres.find(x => x.id === genreId);
@@ -238,9 +239,9 @@ function nextSong() {
   if (!songs.length) return;
   if (queue.length) {
     const next = queue.shift();
-    songs.unshift(next);
-    curIdx = -1;
-    playSong(0);
+    // Play the queued track without mutating the songs array
+    const tempList = [next, ...songs];
+    playSong(0, tempList);
     renderQueue();
     return;
   }
@@ -276,8 +277,9 @@ function toggleMute() {
   muted = !muted;
   audio.volume = muted ? 0 : lastVol;
   const icon = muted ? "xmark" : "high";
-  document.getElementById("muteBtn").innerHTML = `<i class="fas fa-volume-${icon}"></i>`;
-  document.getElementById("volFill").style.width = (muted ? 0 : lastVol * 100) + "%";
+  document.getElementById("muteBtn")?.innerHTML && (document.getElementById("muteBtn").innerHTML = `<i class="fas fa-volume-${icon}"></i>`);
+  const vf = document.getElementById("volFill");
+  if (vf) vf.style.width = (muted ? 0 : lastVol * 100) + "%";
 }
 
 // ── PROGRESS ──────────────────────────────────────────
@@ -328,8 +330,14 @@ function updateLikeBtn() {
   const liked = isLiked(songs[curIdx].id);
   const lb  = document.getElementById("likeBtn");
   const mlb = document.getElementById("mpsLikeBtn");
-  if (lb)  { lb.className  = `cbtn sm ${liked ? "active fas" : "far"} fa-heart`; lb.innerHTML  = `<i class="${liked ? "fas" : "far"} fa-heart"></i>`; }
-  if (mlb) { mlb.innerHTML = `<i class="${liked ? "fas" : "far"} fa-heart"></i>`; mlb.classList.toggle("liked", liked); }
+  if (lb)  {
+    lb.className = `cbtn sm ${liked ? "active" : ""}`;
+    lb.innerHTML = `<i class="${liked ? "fas" : "far"} fa-heart"></i>`;
+  }
+  if (mlb) {
+    mlb.innerHTML = `<i class="${liked ? "fas" : "far"} fa-heart"></i>`;
+    mlb.classList.toggle("liked", liked);
+  }
 }
 
 function toggleLike() {
@@ -417,11 +425,11 @@ function renderRecent() {
     el.innerHTML = `<div class="panel-empty"><i class="fas fa-clock"></i><p>Nothing yet</p></div>`;
     return;
   }
-  el.innerHTML = recentlyPlayed.map((r, i) => {
+  el.innerHTML = recentlyPlayed.map((r) => {
     const s = r.track;
     const cover = s.album_image || s.cover || "";
     return `
-    <div class="queue-item" onclick="playSong(0, [${JSON.stringify(s).replace(/"/g, "&quot;")}])">
+    <div class="queue-item">
       <div class="queue-art">${cover ? `<img src="${cover}"/>` : `<i class="fas fa-music"></i>`}</div>
       <div class="queue-info">
         <p class="queue-title">${s.name || s.title}</p>
@@ -429,6 +437,13 @@ function renderRecent() {
       </div>
     </div>`;
   }).join("");
+  // Wire clicks safely via event listeners
+  el.querySelectorAll(".queue-item").forEach((item, i) => {
+    item.addEventListener("click", () => {
+      const track = recentlyPlayed[i]?.track;
+      if (track) playSong(0, [track]);
+    });
+  });
 }
 
 function getTimeAgo(ts) {
@@ -473,7 +488,7 @@ function renderLibrary() {
       const cover = song.album_image || song.cover || "";
       const liked = true;
       return `
-      <div class="srow" onclick="playSong(${i}, list)" style="grid-template-columns:30px 1fr 56px 34px">
+      <div class="srow" style="grid-template-columns:30px 1fr 56px 34px">
         <span class="srow-n">${i+1}</span>
         <div class="srow-info">
           <p class="srow-name">${song.name || song.title}</p>
@@ -593,7 +608,9 @@ function setupUpload() {
       if (!myMusic.some(m => m.name === track.name)) myMusic.push(track);
     }
     renderMyMusic();
-    showToast(`✅ ${files.length} song${files.length > 1 ? "s" : ""} uploaded!`);
+    // Note: local blob URLs cannot be serialised to localStorage —
+    // uploads are session-only and will be lost on page refresh.
+    showToast(`✅ ${files.length} song${files.length > 1 ? "s" : ""} uploaded! (session only — reupload after refresh)`);
     input.value = "";
   });
 }
@@ -799,11 +816,13 @@ function cycleSleepTimer() {
     updateSleepBtn(); showToast("😴 Sleep timer off"); return;
   }
   const options = [15, 30, 45, 60];
-  const next = options[(options.indexOf(sleepMins) + 1) % options.length];
-  if (!next || sleepMins === 60) {
+  const curIdx  = options.indexOf(sleepMins);
+  const nextIdx = (curIdx + 1) % options.length;
+  // If we've cycled through all options (wrapped back to start), turn off
+  if (curIdx === options.length - 1) {
     sleepMins = 0; updateSleepBtn(); showToast("😴 Sleep timer off"); return;
   }
-  sleepMins = next;
+  sleepMins = options[nextIdx];
   let remaining = sleepMins * 60;
   sleepTimer = setTimeout(() => {
     audio.pause(); playing = false;

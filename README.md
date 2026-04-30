@@ -27,7 +27,7 @@ A Spotify-inspired music streaming web app built with pure HTML, CSS, and JavaSc
 ### Run Locally
 1. Clone this repository:
    ```bash
-   git clone https://atharva-923.github.io/TuneFlow
+   git clone https://github.com/atharva-923/TuneFlow
    cd tuneflow
    ```
 2. Open `index.html` in your browser — that's it!
