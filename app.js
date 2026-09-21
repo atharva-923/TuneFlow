@@ -10,6 +10,7 @@ const JAMENDO   = "https://api.jamendo.com/v3.0";
 
 // ── STATE ─────────────────────────────────────────────
 let songs          = [];
+window.homeSongs   = [];
 let curIdx         = -1;
 let playing        = false;
 let shuffle        = false;
@@ -118,27 +119,29 @@ async function loadGenre(genreId) {
 
   showLoading();
   const tracks = await fetchTracks({ tags: g.tags, orderby: "popularity_total" });
-  songs = tracks;
-  renderSongList(songs);
+  window.homeSongs = tracks;
+  if (songs.length === 0) songs = tracks;
+  renderSongList();
 }
 
 // ── RENDER SONG LIST (left panel compact rows) ─────────
-function renderSongList(list) {
+function renderSongList() {
   const el = document.getElementById("songList");
   if (!el) return;
+  const list = window.homeSongs || [];
   if (!list.length) {
     el.innerHTML = `<div class="empty-state"><i class="fas fa-music"></i><p>No songs found</p></div>`;
     return;
   }
   el.innerHTML = list.map((song, i) => {
-    const isActive = i === curIdx;
+    const isActive = (songs === list && i === curIdx);
     const liked    = isLiked(song.id);
     const dur      = song.duration ? fmt(song.duration) : "—";
     const name     = song.name || song.title || "Unknown";
     const artist   = song.artist_name || song.artist || "Unknown";
 
     return `
-    <div class="srow ${isActive ? "active" : ""}" onclick="playSong(${i})">
+    <div class="srow ${isActive ? "active" : ""}" onclick="playSong(${i}, window.homeSongs)">
       <div style="display:flex;align-items:center;justify-content:center">
         <div class="mwave"><b></b><b></b><b></b></div>
         <span class="srow-n">${i + 1}</span>
@@ -167,9 +170,21 @@ function playSong(idx, list) {
   audio.play().catch(() => showToast("Tap play to start 🎵"));
   playing = true;
   crossfadeActive = false;
+  if (window.crossfadeInterval) { clearInterval(window.crossfadeInterval); audio.volume = muted ? 0 : lastVol; }
 
   updateNowPlaying(song);
-  renderSongList(songs);
+  renderSongList();
+  if (currentSection === "library") renderLibrary();
+  if (currentSection === "mymusic") renderMyMusic();
+  // Search isn't re-rendered, but we update classes manually
+  document.querySelectorAll(".srow").forEach((row, rIdx) => {
+     if (songs === window._searchSongs && rIdx === idx && currentSection === "search") {
+         row.classList.add("active");
+     } else if (currentSection === "search") {
+         row.classList.remove("active");
+     }
+  });
+
   addToRecent(song);
   renderQueue();
   syncMobileUI(song);
@@ -354,13 +369,13 @@ function toggleLike() {
 }
 
 function toggleSongLike(trackId, idx) {
-  const song  = songs[idx];
+  const song  = window.homeSongs[idx];
   const exist = likedSongs.findIndex(l => l.id == trackId);
   if (exist >= 0) { likedSongs.splice(exist, 1); showToast("Removed from Liked Songs"); }
   else            { likedSongs.push({ id: trackId, track: song }); showToast("❤️ Added to Liked Songs"); }
   saveLiked(); updateLikedCount();
-  renderSongList(songs);
-  if (idx === curIdx) updateLikeBtn();
+  renderSongList();
+  if (song.id === (songs[curIdx] && songs[curIdx].id)) updateLikeBtn();
   if (currentSection === "library") renderLibrary();
 }
 
@@ -869,11 +884,11 @@ function setupCrossfade() {
       const steps = crossfadeSecs * 10;
       let step = 0;
       const origVol = audio.volume;
-      const fade = setInterval(() => {
+      window.crossfadeInterval = setInterval(() => {
         step++;
         audio.volume = Math.max(0, origVol * (1 - step / steps));
         if (step >= steps) {
-          clearInterval(fade);
+          clearInterval(window.crossfadeInterval);
           audio.volume = origVol;
           crossfadeActive = false;
         }
